@@ -1,0 +1,216 @@
+// Dr. Hen — Prisma schema
+// TEMPORARY: reverted to sqlite for local preview only (no Postgres connected
+// yet — waiting on the Render Postgres instance). MUST switch back to
+// "postgresql" before pushing/deploying to Render — see render.yaml, which
+// already assumes postgresql. The schema deliberately never used Postgres-only
+// features (native scalar arrays — Json columns instead), so this is a clean
+// one-line swap either direction.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum FarmerStatus {
+  HEALTHY
+  AT_RISK
+  UNDER_TREATMENT
+  ESCALATED
+}
+
+enum TreatmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum DiseaseCode {
+  ND // Newcastle Disease / Ranikhet
+  IB // Infectious Bronchitis
+  CRD // Chronic Respiratory Disease
+  COCCIDIOSIS
+  AI_H9 // Avian Influenza H9
+  OTHER
+  UNKNOWN
+}
+
+enum MessageChannel {
+  WHATSAPP
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageContentType {
+  TEXT
+  IMAGE
+  VOICE
+  VIDEO
+  TEMPLATE
+}
+
+enum SenderType {
+  FARMER
+  AI_AGENT
+  ADMIN
+  FIELD_VET
+}
+
+model Farmer {
+  id             String   @id @default(cuid())
+  name           String
+  location       String
+  whatsappNumber String   @unique
+  flockSize      Int
+  numberOfSheds  Int
+  flockAgeWeeks  Int
+  breed          String
+  status         FarmerStatus @default(HEALTHY)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  flocks         Flock[]
+  dailyReports   DailyReport[]
+  treatments     Treatment[]
+  vaccinations   Vaccination[]
+  messages       Message[]
+  vetEscalations VetEscalation[]
+}
+
+model Flock {
+  id        String   @id @default(cuid())
+  farmerId  String
+  farmer    Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  name      String
+  breed     String
+  sizeCount Int
+  ageWeeks  Int
+  startDate DateTime
+  active    Boolean  @default(true)
+
+  dailyReports DailyReport[]
+  treatments   Treatment[]
+  vaccinations Vaccination[]
+
+  @@index([farmerId])
+}
+
+model DailyReport {
+  id             String   @id @default(cuid())
+  farmerId       String
+  farmer         Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  flockId        String?
+  flock          Flock?   @relation(fields: [flockId], references: [id])
+  date           DateTime @default(now())
+  fcr            Float?
+  avgWeightGrams Float?
+  mortalityCount Int      @default(0)
+  notes          String?
+
+  @@index([farmerId, date])
+}
+
+// The 12 client-approved medicines. Seeded from src/lib/ai/diseaseProtocol.ts —
+// that file, not this table, is the source of truth the AI allowlist reads from.
+model Medicine {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  manufacturer String // "ST Vet Pharma" | "Supers Diana"
+  category     String? // antibiotic / vitamin / oral solution / etc.
+}
+
+// One row per disease, mirroring DISEASE_PROTOCOL in src/lib/ai/diseaseProtocol.ts.
+model MedicineProtocol {
+  id               String      @id @default(cuid())
+  diseaseCode      DiseaseCode @unique
+  diseaseName      String
+  primaryMedicines Json // string[]
+  supportMedicines Json? // string[] | null
+  notes            String?
+  isAntibiotic     Boolean     @default(false)
+}
+
+model Treatment {
+  id              String           @id @default(cuid())
+  farmerId        String
+  farmer          Farmer           @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  flockId         String?
+  flock           Flock?           @relation(fields: [flockId], references: [id])
+  diseaseCode     DiseaseCode
+  medicinesGiven  Json // string[], validated against Medicine at write time
+  status          TreatmentStatus  @default(SCHEDULED)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  nextActionAt    DateTime?
+  nextActionNote  String?
+  sourceMessageId String?          @unique
+  sourceMessage   Message?         @relation("TreatmentSource", fields: [sourceMessageId], references: [id])
+  createdAt       DateTime         @default(now())
+
+  @@index([farmerId, status])
+}
+
+model Vaccination {
+  id               String           @id @default(cuid())
+  farmerId         String
+  farmer           Farmer           @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  flockId          String?
+  flock            Flock?           @relation(fields: [flockId], references: [id])
+  vaccineName      String
+  scheduledDate    DateTime
+  administeredDate DateTime?
+  status           TreatmentStatus  @default(SCHEDULED)
+  notes            String?
+
+  @@index([farmerId, status])
+}
+
+model Message {
+  id                String             @id @default(cuid())
+  farmerId          String
+  farmer            Farmer             @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  channel           MessageChannel     @default(WHATSAPP)
+  direction         MessageDirection
+  senderType        SenderType
+  contentType       MessageContentType
+  textContent       String?
+  mediaUrl          String?
+  detectedLanguage  String?
+  aiDiagnosis       Json?
+  whatsappMessageId String?            @unique
+  rawWebhookPayload Json?
+  createdAt         DateTime           @default(now())
+
+  treatmentSourced  Treatment?         @relation("TreatmentSource")
+
+  @@index([farmerId, createdAt])
+}
+
+model FieldVet {
+  id             String  @id @default(cuid())
+  name           String
+  region         String // "Rawalpindi" | "Kotli Sattian"
+  phoneNumber    String
+  whatsappNumber String?
+  active         Boolean @default(true)
+
+  vetEscalations VetEscalation[]
+}
+
+model VetEscalation {
+  id                String   @id @default(cuid())
+  farmerId          String
+  farmer            Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  fieldVetId        String?
+  fieldVet          FieldVet? @relation(fields: [fieldVetId], references: [id])
+  triggerMessageId  String?
+  status            String   @default("PENDING") // PENDING | CONTACTED | RESOLVED
+  createdAt         DateTime @default(now())
+}

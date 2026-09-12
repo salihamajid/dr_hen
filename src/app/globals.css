@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f6f5;
+  --foreground: #14231d;
+  --sidebar-bg: #16211d;
+  --brand-red: #e0392b;
+  --brand-green: #1f7a4d;
+  --brand-green-dark: #14532d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-brand-red: var(--brand-red);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-dark: var(--brand-green-dark);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes dr-hen-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(6px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.03) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-dr-hen-pop {
+  animation: dr-hen-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
