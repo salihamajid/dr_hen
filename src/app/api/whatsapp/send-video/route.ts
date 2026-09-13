@@ -51,5 +51,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ message });
+  return NextResponse.json({ message, provider: process.env.WHATSAPP_PROVIDER === "meta" ? "meta" : "mock" });
 }
