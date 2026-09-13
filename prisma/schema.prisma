@@ -1,13 +1,12 @@
 // Dr. Hen — Prisma schema
-// TEMPORARY: reverted to sqlite for local preview only (no Postgres connected
-// yet — waiting on the Render Postgres instance). MUST switch back to
-// "postgresql" before pushing/deploying to Render — see render.yaml, which
-// already assumes postgresql. The schema deliberately never used Postgres-only
-// features (native scalar arrays — Json columns instead), so this is a clean
-// one-line swap either direction.
+// Postgres in production (Render, DATABASE_URL pointing at a free Neon
+// instance — Render's own managed Postgres has no free tier). Local dev
+// currently shares that same Neon database (see .env). The schema deliberately
+// never used Postgres-only features (native scalar arrays — Json columns
+// instead), so provider is never a reason to touch this file again.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
