@@ -31,6 +31,21 @@ export async function POST(req: NextRequest) {
 
   const payload = JSON.parse(rawBody) as MetaWebhookPayload;
 
+  // Delivery-status callbacks (sent/delivered/read/failed) for messages WE sent.
+  // This is the ONLY place a real delivery failure shows up — the synchronous
+  // send response only confirms Meta *accepted* the request, not that the
+  // recipient's phone actually got it.
+  for (const entry of payload.entry) {
+    for (const change of entry.changes) {
+      for (const status of change.value.statuses ?? []) {
+        console.log(
+          `STATUS UPDATE: wamid=${status.id} to=${status.recipient_id} status=${status.status}` +
+            (status.errors?.length ? ` errors=${JSON.stringify(status.errors)}` : "")
+        );
+      }
+    }
+  }
+
   // Meta expects a fast 200 OK and retries (with backoff, over up to 36h) on
   // failure or timeout — the AI diagnosis + WhatsApp send can take several
   // seconds, so we ack immediately and do the real work after responding.

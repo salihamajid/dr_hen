@@ -16,9 +16,22 @@ export interface MetaWebhookPayload {
         metadata: { display_phone_number: string; phone_number_id: string };
         contacts?: Array<{ profile: { name: string }; wa_id: string }>;
         messages?: Array<MetaInboundMessage>;
+        statuses?: Array<MetaMessageStatus>;
       };
     }>;
   }>;
+}
+
+// Meta's async delivery-status callback for messages WE sent — arrives on this
+// same webhook, separately from inbound farmer messages. This is the ONLY place
+// a failed/undelivered send shows up: the synchronous send response only ever
+// confirms Meta accepted the request, never that the recipient device got it.
+export interface MetaMessageStatus {
+  id: string; // the wamid this status is about
+  status: "sent" | "delivered" | "read" | "failed";
+  timestamp: string;
+  recipient_id: string;
+  errors?: Array<{ code: number; title: string; message?: string; error_data?: { details?: string } }>;
 }
 
 export interface MetaInboundMessage {
