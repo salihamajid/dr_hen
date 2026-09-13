@@ -46,5 +46,13 @@ services:
       - key: DEMO_MODE
         value: "true"
 
+      # Intro video message initiates contact with a farmer who's never
+      # messaged Dr. Hen — WhatsApp requires an approved Message Template for
+      # that (freeform video only works within an open 24h session window).
+      # Create + get the template approved in Meta's WhatsApp Manager first.
+      - key: INTRO_VIDEO_TEMPLATE_NAME
+        value: dr_hen_intro
+      - key: INTRO_VIDEO_MEDIA_ID
+        sync: false # preferred: a Meta Media API id, doesn't depend on this app being awake
       - key: INTRO_VIDEO_URL
-        value: /videos/intro-demo.mp4
+        value: https://dr-hen.onrender.com/videos/intro-demo.mp4 # only used if INTRO_VIDEO_MEDIA_ID is unset

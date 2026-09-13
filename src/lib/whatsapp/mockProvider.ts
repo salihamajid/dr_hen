@@ -10,8 +10,8 @@ function fakeMessageId(): string {
 // senderType/contentType, since this provider only knows a phone number, not the
 // app's data model.
 export const mockProvider: WhatsAppProvider = {
-  async sendTemplate(to, templateName, params): Promise<SendResult> {
-    console.log(`[mock-whatsapp] sendTemplate to=${to} template=${templateName}`, params ?? {});
+  async sendTemplate(to, templateName, options): Promise<SendResult> {
+    console.log(`[mock-whatsapp] sendTemplate to=${to} template=${templateName}`, options ?? {});
     return { messageId: fakeMessageId() };
   },
 

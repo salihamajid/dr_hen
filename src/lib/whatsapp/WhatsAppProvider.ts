@@ -1,10 +1,18 @@
-import type { FetchedMedia, SendResult } from "./types";
+import type { FetchedMedia, SendResult, TemplateOptions } from "./types";
 
 // All app code depends on this interface only — never on mockProvider or
 // metaCloudProvider directly — so going live with real WhatsApp later is an env
 // var change (WHATSAPP_PROVIDER=meta), not a code change. See index.ts.
 export interface WhatsAppProvider {
-  sendTemplate(to: string, templateName: string, params?: Record<string, string>): Promise<SendResult>;
+  /**
+   * Sends a pre-approved Message Template. Required (not optional) for any
+   * message that initiates contact — WhatsApp only allows freeform messages
+   * (sendText/sendMedia) within an open 24h customer-service window, i.e.
+   * after the recipient has messaged first. A template is the only message
+   * type WhatsApp allows outside that window, confirmed against Meta's
+   * Cloud API pricing/session docs.
+   */
+  sendTemplate(to: string, templateName: string, options?: TemplateOptions): Promise<SendResult>;
   sendText(to: string, body: string): Promise<SendResult>;
   sendMedia(to: string, mediaUrl: string, caption?: string): Promise<SendResult>;
   verifyWebhookSignature(rawBody: string, signature: string | null): boolean;

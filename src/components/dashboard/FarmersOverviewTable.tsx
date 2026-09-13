@@ -7,6 +7,7 @@ export interface FarmerOverviewRow {
   id: string;
   name: string;
   location: string;
+  whatsappNumber: string;
   flockSize: number;
   status: string;
   currentIssue: string;
@@ -34,6 +35,7 @@ export function FarmersOverviewTable({ farmers }: { farmers: FarmerOverviewRow[]
             <tr className="text-xs uppercase tracking-wide text-black/40">
               <th className="pb-3 pr-4 font-medium">Farmer Name</th>
               <th className="pb-3 pr-4 font-medium">Location</th>
+              <th className="pb-3 pr-4 font-medium">WhatsApp</th>
               <th className="pb-3 pr-4 font-medium">Flock Size</th>
               <th className="pb-3 pr-4 font-medium">Current Issue</th>
               <th className="pb-3 pr-4 font-medium">Last Treatment</th>
@@ -46,6 +48,7 @@ export function FarmersOverviewTable({ farmers }: { farmers: FarmerOverviewRow[]
               <tr key={f.id}>
                 <td className="py-3 pr-4 font-medium">{f.name}</td>
                 <td className="py-3 pr-4 text-black/60">{f.location}</td>
+                <td className="py-3 pr-4 text-black/60">{f.whatsappNumber}</td>
                 <td className="py-3 pr-4 text-black/60">{f.flockSize.toLocaleString()}</td>
                 <td className="py-3 pr-4">
                   <span className={f.currentIssue === "Healthy" ? "text-green-600" : "text-red-600"}>
@@ -77,6 +80,8 @@ export function FarmersOverviewTable({ farmers }: { farmers: FarmerOverviewRow[]
               <Badge className={FARMER_STATUS_COLOR[f.status]}>{FARMER_STATUS_LABEL[f.status]}</Badge>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-y-1.5 text-xs">
+              <dt className="text-black/40">WhatsApp</dt>
+              <dd className="text-right">{f.whatsappNumber}</dd>
               <dt className="text-black/40">Flock Size</dt>
               <dd className="text-right">{f.flockSize.toLocaleString()}</dd>
               <dt className="text-black/40">Current Issue</dt>

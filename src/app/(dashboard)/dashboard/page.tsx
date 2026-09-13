@@ -36,6 +36,7 @@ export default async function DashboardPage() {
       id: f.id,
       name: f.name,
       location: f.location,
+      whatsappNumber: f.whatsappNumber,
       flockSize: f.flockSize,
       status: f.status,
       currentIssue: issueLabelFor(latest?.diseaseCode),

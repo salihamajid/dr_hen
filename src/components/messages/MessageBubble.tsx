@@ -36,7 +36,9 @@ export function MessageBubble({ message }: { message: MessageLike }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={message.mediaUrl!} alt="Farmer submitted" className="mb-2 max-h-56 rounded-lg" />
         )}
-        {message.contentType === "VIDEO" && <div className="mb-1 text-xs italic opacity-80">🎥 Video sent</div>}
+        {(message.contentType === "VIDEO" || message.contentType === "TEMPLATE") && (
+          <div className="mb-1 text-xs italic opacity-80">🎥 Video sent</div>
+        )}
         {message.contentType === "VOICE" && <div className="mb-1 text-xs italic opacity-80">🎙️ Voice note (transcribed below)</div>}
 
         <p className="whitespace-pre-wrap">{message.textContent}</p>

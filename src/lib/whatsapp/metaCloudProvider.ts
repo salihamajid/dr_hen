@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { WhatsAppProvider } from "./WhatsAppProvider";
-import type { FetchedMedia, SendResult } from "./types";
+import type { FetchedMedia, SendResult, TemplateOptions } from "./types";
 
 // Real Meta WhatsApp Cloud API implementation. Correctly shaped against the
 // documented Graph API endpoints, but will 401 without real credentials — that's
@@ -41,23 +41,36 @@ async function graphPost(body: Record<string, unknown>): Promise<SendResult> {
 }
 
 export const metaCloudProvider: WhatsAppProvider = {
-  async sendTemplate(to, templateName, params): Promise<SendResult> {
+  /**
+   * Templates are the ONLY message type WhatsApp allows outside an open 24h
+   * customer-service window — i.e. the only way to message a farmer who
+   * hasn't contacted you first. The template itself (name, header type, body
+   * copy) must already exist and be approved in Meta's WhatsApp Manager;
+   * this just fills in its variable parts per send.
+   */
+  async sendTemplate(to, templateName, options): Promise<SendResult> {
+    const components: Record<string, unknown>[] = [];
+
+    if (options?.headerVideo) {
+      components.push({
+        type: "header",
+        parameters: [{ type: "video", video: options.headerVideo }],
+      });
+    }
+    if (options?.bodyParams?.length) {
+      components.push({
+        type: "body",
+        parameters: options.bodyParams.map((text) => ({ type: "text", text })),
+      });
+    }
+
     return graphPost({
       to,
       type: "template",
       template: {
         name: templateName,
-        language: { code: "en" },
-        ...(params
-          ? {
-              components: [
-                {
-                  type: "body",
-                  parameters: Object.values(params).map((text) => ({ type: "text", text })),
-                },
-              ],
-            }
-          : {}),
+        language: { code: options?.languageCode ?? "en" },
+        ...(components.length ? { components } : {}),
       },
     });
   },

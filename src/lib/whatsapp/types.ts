@@ -47,3 +47,11 @@ export interface FetchedMedia {
   base64: string;
   mimeType: string;
 }
+
+export interface TemplateOptions {
+  languageCode?: string; // defaults to "en" — must match the template's approved language exactly
+  /** Header media for templates whose header component is IMAGE/VIDEO/DOCUMENT. */
+  headerVideo?: { link?: string; id?: string };
+  /** {{1}}, {{2}}, ... body placeholders, in order. */
+  bodyParams?: string[];
+}
