@@ -123,6 +123,7 @@ async function processInboundMessage(msg: MetaInboundMessage) {
   const diagnosis = await runDiagnosis(turns);
   const reply = buildFarmerReply(diagnosis);
 
+  console.log("SENDING REPLY:", reply.text);
   const sendResult = await whatsapp.sendText(farmer.whatsappNumber, reply.text);
 
   const outbound = await prisma.message.create({

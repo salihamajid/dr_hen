@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
+  console.log("WEBHOOK HIT:", rawBody);
+
   const signature = req.headers.get("x-hub-signature-256");
 
   if (process.env.WHATSAPP_PROVIDER === "meta" && !whatsapp.verifyWebhookSignature(rawBody, signature)) {
