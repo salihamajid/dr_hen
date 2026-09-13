@@ -24,9 +24,9 @@ services:
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
 
-      # Flip to "meta" once real WhatsApp Cloud API credentials are set below.
+      # Real WhatsApp Cloud API — credentials are set below.
       - key: WHATSAPP_PROVIDER
-        value: mock
+        value: meta
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_ACCESS_TOKEN
