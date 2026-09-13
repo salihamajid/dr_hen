@@ -45,7 +45,7 @@ export function FarmerActions({ farmerId }: { farmerId: string }) {
           className="flex items-center gap-1.5 rounded-lg bg-brand-green px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           <MessageCircle className="h-3.5 w-3.5" />
-          {sending ? "Sending…" : sent ? "Sent ✓" : "Send WhatsApp Message"}
+          {sending ? "Sending…" : sent ? "Accepted by Meta ✓" : "Send WhatsApp Message"}
         </button>
       </div>
       {error && <span className="max-w-[220px] text-right text-[11px] text-red-600">{error}</span>}

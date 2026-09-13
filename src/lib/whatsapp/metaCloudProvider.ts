@@ -31,13 +31,31 @@ async function graphPost(body: Record<string, unknown>): Promise<SendResult> {
     body: JSON.stringify({ messaging_product: "whatsapp", ...body }),
   });
 
+  const rawBody = await res.text();
+
   if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`WhatsApp Cloud API error ${res.status}: ${errBody}`);
+    // Surfaced verbatim so the caller/logs show Meta's exact error — e.g. an
+    // expired token (OAuthException code 190) reads clearly here, not just
+    // "something failed".
+    throw new Error(`WhatsApp Cloud API error ${res.status}: ${rawBody}`);
   }
 
-  const data = (await res.json()) as { messages?: Array<{ id: string }> };
-  return { messageId: data.messages?.[0]?.id ?? "" };
+  let data: { messages?: Array<{ id: string; message_status?: string }> };
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    throw new Error(`WhatsApp Cloud API returned 200 but non-JSON body: ${rawBody.slice(0, 300)}`);
+  }
+
+  const messageId = data.messages?.[0]?.id;
+  // A 200 response with no message id means Meta accepted the HTTP request but
+  // didn't actually queue a message — e.g. a malformed template reference.
+  // Don't call this a success just because the status code was 2xx.
+  if (!messageId) {
+    throw new Error(`WhatsApp Cloud API returned 200 but no message id — unexpected response: ${rawBody.slice(0, 300)}`);
+  }
+
+  return { messageId };
 }
 
 export const metaCloudProvider: WhatsAppProvider = {
