@@ -35,9 +35,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const result = await whatsapp.sendTemplate(farmer.whatsappNumber, INTRO_TEMPLATE_NAME ?? "dr_hen_intro", {
-    headerVideo: INTRO_VIDEO_MEDIA_ID ? { id: INTRO_VIDEO_MEDIA_ID } : { link: INTRO_VIDEO_URL ?? "/videos/intro-demo.mp4" },
-  });
+  let result;
+  try {
+    result = await whatsapp.sendTemplate(farmer.whatsappNumber, INTRO_TEMPLATE_NAME ?? "dr_hen_intro", {
+      headerVideo: INTRO_VIDEO_MEDIA_ID ? { id: INTRO_VIDEO_MEDIA_ID } : { link: INTRO_VIDEO_URL ?? "/videos/intro-demo.mp4" },
+    });
+  } catch (err) {
+    // Without this, Next.js swallows the thrown error into an opaque, bodyless
+    // 500 in production — masking exactly the Meta error detail (bad token,
+    // unapproved template, etc.) callers need to fix a failed send.
+    return NextResponse.json({ error: err instanceof Error ? err.message : "WhatsApp send failed" }, { status: 502 });
+  }
 
   const message = await prisma.message.create({
     data: {
