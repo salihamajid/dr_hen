@@ -9,11 +9,13 @@ export function FarmerForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setSuccess(false);
 
     const form = new FormData(e.currentTarget);
     const payload = {
@@ -40,13 +42,21 @@ export function FarmerForm() {
       return;
     }
 
-    router.push("/farmers");
-    router.refresh();
+    // Show the confirmation before navigating away — otherwise the redirect
+    // happens instantly and there's no visible sign the save actually worked.
+    setSuccess(true);
+    setTimeout(() => {
+      router.push("/farmers");
+      router.refresh();
+    }, 900);
   }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-4 rounded-2xl bg-white p-6 shadow-sm">
       {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
+      {success && (
+        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-brand-green-dark">Farmer added successfully!</div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Farmer Name" name="name" required />
@@ -66,10 +76,10 @@ export function FarmerForm() {
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || success}
         className="rounded-lg bg-brand-red px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
       >
-        {submitting ? "Saving…" : "Save Farmer"}
+        {submitting ? "Saving…" : success ? "Saved ✓" : "Save Farmer"}
       </button>
     </form>
   );
