@@ -14,6 +14,10 @@ const CONTENT_TYPE_MAP: Record<MetaInboundMessage["type"], "TEXT" | "IMAGE" | "V
   video: "VIDEO",
 };
 
+function toE164(rawNumber: string): string {
+  return rawNumber.startsWith("+") ? rawNumber : `+${rawNumber}`;
+}
+
 /**
  * The single code path driven by BOTH the real Meta webhook route and the demo's
  * /api/whatsapp/simulate route (which fabricates a payload in this exact shape).
@@ -39,7 +43,13 @@ async function processInboundMessage(msg: MetaInboundMessage) {
   const existing = await prisma.message.findUnique({ where: { whatsappMessageId: msg.id } });
   if (existing) return;
 
-  const farmer = await prisma.farmer.findUnique({ where: { whatsappNumber: msg.from } });
+  // Meta's Cloud API sends `from` as bare digits with country code (e.g.
+  // "923126334747"), but every farmer is stored E.164-style with a leading
+  // "+" (see FarmerForm/seed.ts) — an exact-match lookup on the raw value
+  // silently missed every real inbound message, which the demo simulate
+  // route never caught since it fabricates `from` from farmer.whatsappNumber
+  // (already "+"-prefixed) rather than Meta's real wire format.
+  const farmer = await prisma.farmer.findUnique({ where: { whatsappNumber: toE164(msg.from) } });
   if (!farmer) {
     console.warn(`[whatsapp] inbound message from unknown number ${msg.from}, ignoring`);
     return;
