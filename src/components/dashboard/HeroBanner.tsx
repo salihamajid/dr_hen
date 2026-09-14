@@ -16,12 +16,16 @@ export function HeroBanner({
   return (
     <div className="overflow-hidden rounded-2xl bg-white p-5 shadow-sm md:p-8">
       <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-center lg:grid-cols-[260px_1fr]">
-        <div className="relative order-2 mx-auto h-56 w-48 shrink-0 md:order-1 md:h-64 md:w-full">
+        {/* Sized to the source image's actual 704:1521 aspect ratio, not a fixed
+            height — the image is a tall portrait, so a short wide box was
+            forcing object-contain to shrink it into a narrow sliver with empty
+            space on both sides instead of filling the column. */}
+        <div className="relative order-2 mx-auto aspect-[704/1521] w-40 shrink-0 md:order-1 md:w-full">
           <Image
             src="/images/dr-hen.jpeg"
             alt="Dr. Hen, your AI Poultry Doctor"
             fill
-            sizes="(min-width: 768px) 260px, 192px"
+            sizes="(min-width: 768px) 260px, 160px"
             className="object-contain"
             priority
           />
