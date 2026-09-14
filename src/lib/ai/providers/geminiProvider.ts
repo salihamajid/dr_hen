@@ -60,8 +60,11 @@ function sleep(ms: number): Promise<void> {
 // where 1 in 5 plain requests failed this way. Without a retry, a farmer's
 // message just vanishes with no reply and no visible error. Retries only these
 // specific transient statuses, not real failures (bad API key, invalid schema).
+// 4 attempts / up to ~3.5s total is safe here specifically because this runs in
+// the webhook's after() background task (see handleInboundWebhook.ts) — Meta
+// already got its 200 ack, so nothing HTTP-facing is blocked on this retrying.
 const RETRYABLE_STATUS = /"status":"(UNAVAILABLE|RESOURCE_EXHAUSTED)"|"code":\s*(429|503)/;
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 4;
 
 async function generateContentWithRetry(
   ai: GoogleGenAI,
@@ -73,7 +76,7 @@ async function generateContentWithRetry(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (attempt >= MAX_ATTEMPTS || !RETRYABLE_STATUS.test(message)) throw err;
-      await sleep(500 * 2 ** (attempt - 1)); // 500ms, then 1000ms
+      await sleep(500 * 2 ** (attempt - 1)); // 500ms, 1000ms, then 2000ms
     }
   }
 }
