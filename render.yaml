@@ -15,7 +15,9 @@ services:
     startCommand: npm run start
     envVars:
       - key: DATABASE_URL
-        sync: false # paste your Neon (or other) Postgres connection string here
+        sync: false # paste your Neon (or other) Postgres connection string here (pooled, "-pooler" host)
+      - key: DIRECT_URL
+        sync: false # Neon's non-pooled connection string — required by `prisma migrate deploy` (pooled connections can't hold its advisory lock)
 
       - key: AI_PROVIDER
         value: gemini

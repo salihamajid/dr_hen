@@ -6,8 +6,11 @@
 // instead), so provider is never a reason to touch this file again.
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon's pooled connection (-pooler host) can't hold the advisory lock
+  // `prisma migrate deploy` needs — migrations must go over a direct connection.
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
