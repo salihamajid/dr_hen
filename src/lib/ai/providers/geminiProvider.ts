@@ -51,11 +51,38 @@ function toGeminiContent(turn: ChatTurn): Content {
   return { role: turn.role === "assistant" ? "model" : "user", parts };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Gemini returns transient 503 UNAVAILABLE ("high demand") and 429
+// RESOURCE_EXHAUSTED errors under normal load — reproduced live during testing,
+// where 1 in 5 plain requests failed this way. Without a retry, a farmer's
+// message just vanishes with no reply and no visible error. Retries only these
+// specific transient statuses, not real failures (bad API key, invalid schema).
+const RETRYABLE_STATUS = /"status":"(UNAVAILABLE|RESOURCE_EXHAUSTED)"|"code":\s*(429|503)/;
+const MAX_ATTEMPTS = 3;
+
+async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: Parameters<GoogleGenAI["models"]["generateContent"]>[0]
+) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (attempt >= MAX_ATTEMPTS || !RETRYABLE_STATUS.test(message)) throw err;
+      await sleep(500 * 2 ** (attempt - 1)); // 500ms, then 1000ms
+    }
+  }
+}
+
 export const geminiProvider: AIProvider = {
   async runDiagnosis(turns: ChatTurn[]): Promise<DiagnosisResult> {
     const ai = getClient();
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: GEMINI_MODEL,
       contents: turns.map(toGeminiContent),
       config: {

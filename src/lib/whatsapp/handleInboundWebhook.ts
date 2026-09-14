@@ -130,7 +130,31 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     ];
   }
 
-  const diagnosis = await runDiagnosis(turns);
+  let diagnosis;
+  try {
+    diagnosis = await runDiagnosis(turns);
+  } catch (err) {
+    // Even with retries (see geminiProvider.ts), the AI call can still fail —
+    // without this, the farmer's message vanishes with zero reply and no
+    // visible error. A short bilingual apology beats total silence, and
+    // doesn't require a language to already be known since diagnosis never ran.
+    console.error("[whatsapp] runDiagnosis failed after retries:", err);
+    const fallbackText =
+      "Sorry, I'm having trouble responding right now. Please try again in a moment, or reply VET to reach our team directly.\n\n" +
+      "Maazrat, is waqt jawab dene mein masla ho raha hai. Baraye meherbani thori dair baad dobara koshish karen, ya 'VET' likh kar hamari team se raabta karen.";
+    const sendResult = await whatsapp.sendText(farmer.whatsappNumber, fallbackText);
+    await prisma.message.create({
+      data: {
+        farmerId: farmer.id,
+        direction: "OUTBOUND",
+        senderType: "AI_AGENT",
+        contentType: "TEXT",
+        textContent: fallbackText,
+        whatsappMessageId: sendResult.messageId,
+      },
+    });
+    return;
+  }
   const reply = buildFarmerReply(diagnosis);
 
   console.log("SENDING REPLY:", reply.text);
