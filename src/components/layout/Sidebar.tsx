@@ -36,7 +36,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col bg-sidebar-bg text-white">
       <div className="flex items-center gap-3 px-6 py-6">
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-white">
-          <Image src="/images/dr-hen.jpeg" alt="Dr. Hen" fill sizes="44px" className="object-cover object-top" />
+          <Image src="/images/dr-hen.jpeg" alt="Dr. Hen" fill sizes="44px" className="object-cover object-top" priority />
         </div>
         <div>
           <div className="text-lg font-bold leading-tight">Dr. Hen</div>
