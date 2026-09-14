@@ -12,7 +12,7 @@
 import { DISEASE_CODES, type DiseaseCode } from "./diseaseProtocol";
 import type { DiagnosisResult, LanguageCode } from "./provider";
 
-export const LANGUAGE_CODES = ["ur", "pa", "en"] as const;
+export const LANGUAGE_CODES = ["ur", "ur-roman", "pa", "en"] as const;
 export const ALL_DISEASE_CODES: DiseaseCode[] = [...DISEASE_CODES, "OTHER", "UNKNOWN"];
 export const CONFIDENCE_LEVELS = ["low", "medium", "high"] as const;
 
@@ -24,7 +24,14 @@ export const CONFIDENCE_LEVELS = ["low", "medium", "high"] as const;
  * parseDiagnosisResult() below never trusts the raw shape anyway.
  */
 export const DIAGNOSIS_FIELDS = {
-  detectedLanguage: { type: "string", enum: LANGUAGE_CODES, description: "The primary language the farmer wrote/spoke in." },
+  detectedLanguage: {
+    type: "string",
+    enum: LANGUAGE_CODES,
+    description:
+      "The farmer's language AND script, based on actual vocabulary/grammar — never guess from the alphabet alone. " +
+      "Urdu words/grammar typed in Latin letters (e.g. 'Meri murgi ko dropping blood masla hay', 'murgi bemar hai', 'thek nahi hai') is 'ur-roman', NOT 'en' — this is extremely common and must not be misread as English just because it uses English letters. " +
+      "'ur' is only for actual Urdu/Nastaliq script. 'en' is only for genuine English sentences/grammar.",
+  },
   diseaseCode: {
     type: "string",
     enum: ALL_DISEASE_CODES,

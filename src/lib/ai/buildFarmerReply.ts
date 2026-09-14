@@ -8,14 +8,16 @@ import { DISEASE_PROTOCOL, medicinesForDisease, type DiseaseCode } from "./disea
 import type { DiagnosisResult, LanguageCode } from "./provider";
 import { checkMedicineAllowlist, SAFE_FALLBACK_REPLY } from "./medicineAllowlist";
 
-const MEDICINE_LABEL: Record<"ur" | "pa" | "en", string> = {
+const MEDICINE_LABEL: Record<LanguageCode, string> = {
   ur: "تجویز کردہ ادویات",
+  "ur-roman": "Tajveez kardah dawaiyan",
   pa: "تجویز کیتیاں دوائیاں",
   en: "Recommended medicines",
 };
 
-const VET_ESCALATION_NOTE: Record<"ur" | "pa" | "en", string> = {
+const VET_ESCALATION_NOTE: Record<LanguageCode, string> = {
   ur: "میں آپ کو ہماری فیلڈ ویٹرنری ٹیم سے جوڑ رہا ہوں، وہ جلد آپ سے رابطہ کریں گے۔",
+  "ur-roman": "Main aap ko hamari Field Vet team se jorh raha hoon, woh jald aap se rabta karen ge.",
   pa: "میں تہانوں ساڈی فیلڈ ویٹرنری ٹیم نال جوڑ رہا واں، اوہ چھیتی تہاڈے نال رابطہ کرن گے۔",
   en: "I'm connecting you with our Field Vet team — they will reach out to you shortly.",
 };
@@ -67,7 +69,7 @@ export function buildFarmerReply(diagnosis: DiagnosisResult): BuiltReply {
  * in explanationForFarmer, scan it before use and fall back to a safe canned
  * response if it ever slips through.
  */
-function safeExplanation(explanation: string, lang: "ur" | "pa" | "en"): string {
+function safeExplanation(explanation: string, lang: LanguageCode): string {
   if (!explanation.trim()) return SAFE_FALLBACK_REPLY[lang];
   const { ok } = checkMedicineAllowlist(explanation);
   return ok ? explanation : SAFE_FALLBACK_REPLY[lang];

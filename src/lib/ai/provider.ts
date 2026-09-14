@@ -14,7 +14,11 @@ export interface ChatTurn {
   image?: { base64: string; mimeType: string };
 }
 
-export type LanguageCode = "ur" | "pa" | "en";
+// "ur-roman" is Urdu vocabulary/grammar typed in Latin letters (e.g. "masla",
+// "thek", "murgi") — extremely common among farmers who can't type Urdu script.
+// It is a distinct reply style from "ur" (actual Urdu/Nastaliq script), not a
+// dialect of English.
+export type LanguageCode = "ur" | "ur-roman" | "pa" | "en";
 
 export interface DiagnosisResult {
   detectedLanguage: LanguageCode;
