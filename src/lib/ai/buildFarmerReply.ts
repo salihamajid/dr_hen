@@ -57,7 +57,7 @@ export function buildFarmerReply(diagnosis: DiagnosisResult): BuiltReply {
   }
 
   const medicineLines = `${MEDICINE_LABEL[lang]}:\n` + medicines.map((m) => `- ${m}`).join("\n");
-  const notesLine = DISEASE_PROTOCOL[diagnosis.diseaseCode as keyof typeof DISEASE_PROTOCOL]?.notes;
+  const notesLine = DISEASE_PROTOCOL[diagnosis.diseaseCode as keyof typeof DISEASE_PROTOCOL]?.notesForFarmer[lang];
 
   const text = [explanation, medicineLines, notesLine].filter(Boolean).join("\n\n");
 
