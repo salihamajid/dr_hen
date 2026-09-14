@@ -54,6 +54,8 @@ services:
       # Create + get the template approved in Meta's WhatsApp Manager first.
       - key: INTRO_VIDEO_TEMPLATE_NAME
         value: dr_hen_intro
+      - key: INTRO_VIDEO_TEMPLATE_LANGUAGE
+        value: en_US # must exactly match the template's approved language in WhatsApp Manager ("en" != "en_US" to Meta's API)
       - key: INTRO_VIDEO_MEDIA_ID
         sync: false # preferred: a Meta Media API id, doesn't depend on this app being awake
       - key: INTRO_VIDEO_URL

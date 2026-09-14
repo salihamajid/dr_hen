@@ -9,6 +9,11 @@ import { whatsapp } from "@/lib/whatsapp";
 // demo simulate panel — Meta opens a 24h window in which freeform media needs
 // no template/approval at all, which is what testing/demo numbers want.
 const INTRO_TEMPLATE_NAME = process.env.INTRO_VIDEO_TEMPLATE_NAME;
+// Must match the template's actual approved language in Meta's WhatsApp Manager
+// exactly — "en" and "en_US" are different templates to Meta's API, and a
+// mismatch here fails with "(#132001) Template name does not exist" even when
+// the template exists and is approved under the other code.
+const INTRO_TEMPLATE_LANGUAGE = process.env.INTRO_VIDEO_TEMPLATE_LANGUAGE || "en_US";
 const INTRO_VIDEO_URL = process.env.INTRO_VIDEO_URL;
 const INTRO_VIDEO_MEDIA_ID = process.env.INTRO_VIDEO_MEDIA_ID;
 const INTRO_CAPTION = "Hello, how is your chicken? Is it okay? Please send a picture, I will tell you.";
@@ -50,6 +55,7 @@ export async function POST(req: NextRequest) {
     result = windowOpen
       ? await whatsapp.sendMedia(farmer.whatsappNumber, INTRO_VIDEO_URL ?? "/videos/intro-demo.mp4", INTRO_CAPTION)
       : await whatsapp.sendTemplate(farmer.whatsappNumber, INTRO_TEMPLATE_NAME ?? "dr_hen_intro", {
+          languageCode: INTRO_TEMPLATE_LANGUAGE,
           headerVideo: INTRO_VIDEO_MEDIA_ID ? { id: INTRO_VIDEO_MEDIA_ID } : { link: INTRO_VIDEO_URL ?? "/videos/intro-demo.mp4" },
         });
   } catch (err) {
