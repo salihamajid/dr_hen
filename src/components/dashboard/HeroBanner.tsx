@@ -1,6 +1,6 @@
+import Image from "next/image";
 import { Users, Bird, Syringe, MessageSquare } from "lucide-react";
 import { StatCard } from "./StatCard";
-import { DrHen3D } from "./DrHen3D";
 
 export function HeroBanner({
   totalFarmers,
@@ -17,14 +17,14 @@ export function HeroBanner({
     <div className="overflow-hidden rounded-2xl bg-white p-5 shadow-sm md:p-8">
       <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-center lg:grid-cols-[260px_1fr]">
         <div className="relative order-2 mx-auto h-56 w-48 shrink-0 md:order-1 md:h-64 md:w-full">
-          <DrHen3D className="h-full w-full" />
-
-          <div className="animate-dr-hen-pop absolute -top-1 right-0 max-w-[180px] rounded-2xl rounded-br-sm bg-white px-3.5 py-2.5 text-xs font-medium leading-snug shadow-lg md:right-2">
-            <span className="font-bold text-brand-green-dark">Hello! I&apos;m Dr. Hen 👋</span>
-            <br />
-            Your AI Poultry Doctor. Let&apos;s keep your flock healthy!
-            <span className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 bg-white" />
-          </div>
+          <Image
+            src="/images/dr-hen.jpeg"
+            alt="Dr. Hen, your AI Poultry Doctor"
+            fill
+            sizes="(min-width: 768px) 260px, 192px"
+            className="object-contain"
+            priority
+          />
         </div>
 
         <div className="order-1 md:order-2">

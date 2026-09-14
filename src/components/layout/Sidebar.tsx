@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -34,7 +35,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-sidebar-bg text-white">
       <div className="flex items-center gap-3 px-6 py-6">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl">🐔</div>
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-white">
+          <Image src="/images/dr-hen.jpeg" alt="Dr. Hen" fill sizes="44px" className="object-cover object-top" />
+        </div>
         <div>
           <div className="text-lg font-bold leading-tight">Dr. Hen</div>
           <div className="text-[11px] uppercase tracking-wide text-white/50">AI Poultry Doctor</div>
