@@ -74,6 +74,13 @@ export async function POST(req: NextRequest) {
     ],
   };
 
-  const result = await handleInboundWebhook(payload);
-  return NextResponse.json({ ok: true, ...result });
+  try {
+    const result = await handleInboundWebhook(payload);
+    return NextResponse.json({ ok: true, ...result });
+  } catch (err) {
+    // Same reasoning as send-video/route.ts — surface the real error instead
+    // of an opaque bodyless 500, so a failure in the demo panel is debuggable.
+    console.error("[whatsapp simulate] processing failed:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Simulate processing failed" }, { status: 500 });
+  }
 }

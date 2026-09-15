@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { whatsapp } from "./index";
 import type { MetaWebhookPayload, MetaInboundMessage } from "./types";
-import { runDiagnosis, textTurn, imageTurn } from "@/lib/ai/diagnose";
+import { runDiagnosis, textTurn, imageTurn, audioTurn } from "@/lib/ai/diagnose";
 import { buildFarmerReply } from "@/lib/ai/buildFarmerReply";
 import { transcribeProvider } from "@/lib/ai/transcribe";
 import type { DiseaseCode } from "@/lib/ai/diseaseProtocol";
@@ -16,6 +16,25 @@ const CONTENT_TYPE_MAP: Record<MetaInboundMessage["type"], "TEXT" | "IMAGE" | "V
 
 function toE164(rawNumber: string): string {
   return rawNumber.startsWith("+") ? rawNumber : `+${rawNumber}`;
+}
+
+/**
+ * whatsapp.sendText() is a freeform message — Meta rejects it outright if the
+ * farmer's 24h session window has closed (they haven't messaged recently).
+ * None of the three send call sites below were guarded against this: an
+ * unguarded rejection here threw uncaught all the way past this module,
+ * crashing the whole webhook request instead of just skipping that one reply.
+ * Confirmed live: a plain-text simulate against a farmer whose window had
+ * closed overnight produced exactly this uncaught failure.
+ */
+async function safeSendText(to: string, body: string): Promise<string | null> {
+  try {
+    const result = await whatsapp.sendText(to, body);
+    return result.messageId;
+  } catch (err) {
+    console.error(`[whatsapp] sendText failed (likely closed session window) to=${to}:`, err);
+    return null;
+  }
 }
 
 /**
@@ -59,6 +78,7 @@ async function processInboundMessage(msg: MetaInboundMessage) {
   let textContent = msg.text?.body ?? "";
   let mediaUrl: string | null = null;
   let resolvedImage: { base64: string; mimeType: string } | null = null;
+  let resolvedAudio: { base64: string; mimeType: string } | null = null;
 
   if (msg.type === "image") {
     const resolved = await resolveInboundMedia(msg.image);
@@ -67,14 +87,29 @@ async function processInboundMessage(msg: MetaInboundMessage) {
       resolvedImage = resolved;
     }
   } else if (msg.type === "audio") {
-    const resolved = await resolveInboundMedia(msg.audio);
-    if (resolved) mediaUrl = resolved.dataUrl;
-    textContent = await transcribeProvider.transcribe(
-      resolved
-        ? { base64: resolved.base64, mimeType: resolved.mimeType }
-        : { mimeType: msg.audio?.mime_type ?? "audio/ogg" },
-      msg.audio?.caption
-    );
+    // Real Meta voice notes always resolve to actual bytes (fetched via the
+    // Media API); the demo simulate panel never sends real audio, only a
+    // fabricated caption/hint, so resolution fails there and we fall back to
+    // the mock transcript path exactly as before.
+    let resolved: { base64: string; mimeType: string; dataUrl: string } | null = null;
+    try {
+      resolved = await resolveInboundMedia(msg.audio);
+    } catch (err) {
+      console.warn("[whatsapp] could not resolve inbound audio, falling back to mock transcript:", err);
+    }
+    if (resolved) {
+      mediaUrl = resolved.dataUrl;
+      resolvedAudio = resolved;
+      // Gemini hears the real audio directly via audioTurn() below — this is
+      // just a short placeholder for the DB record, the "VET" keyword
+      // shortcut, and conversation-history replay on later turns.
+      textContent = msg.audio?.caption || "[voice note]";
+    } else {
+      textContent = await transcribeProvider.transcribe(
+        { mimeType: msg.audio?.mime_type ?? "audio/ogg" },
+        msg.audio?.caption
+      );
+    }
   } else if (msg.type === "video") {
     mediaUrl = msg.video?.link ?? null;
   }
@@ -97,17 +132,21 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     const ackText =
       "Connecting you with our Field Vet team — they will reach out to you shortly.\n" +
       "میں آپ کو ہماری فیلڈ ویٹرنری ٹیم سے جوڑ رہا ہوں، وہ جلد آپ سے رابطہ کریں گے۔";
-    const sendResult = await whatsapp.sendText(farmer.whatsappNumber, ackText);
-    await prisma.message.create({
-      data: {
-        farmerId: farmer.id,
-        direction: "OUTBOUND",
-        senderType: "AI_AGENT",
-        contentType: "TEXT",
-        textContent: ackText,
-        whatsappMessageId: sendResult.messageId,
-      },
-    });
+    const messageId = await safeSendText(farmer.whatsappNumber, ackText);
+    if (messageId) {
+      await prisma.message.create({
+        data: {
+          farmerId: farmer.id,
+          direction: "OUTBOUND",
+          senderType: "AI_AGENT",
+          contentType: "TEXT",
+          textContent: ackText,
+          whatsappMessageId: messageId,
+        },
+      });
+    }
+    // Still escalate even if the ack couldn't be delivered — the Field Vet
+    // queue entry matters more than the confirmation text reaching the farmer.
     await escalateToFieldVet(farmer.id, inbound.id);
     return;
   }
@@ -128,6 +167,15 @@ async function processInboundMessage(msg: MetaInboundMessage) {
       ...conversation.slice(0, -1),
       imageTurn(resolvedImage.base64, resolvedImage.mimeType, textContent || "Please analyze this photo for signs of poultry disease."),
     ];
+  } else if (resolvedAudio) {
+    turns = [
+      ...conversation.slice(0, -1),
+      audioTurn(
+        resolvedAudio.base64,
+        resolvedAudio.mimeType,
+        "Please listen to this voice note describing a poultry health concern and respond accordingly."
+      ),
+    ];
   }
 
   let diagnosis;
@@ -142,23 +190,29 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     const fallbackText =
       "Sorry, I'm having trouble responding right now. Please try again in a moment, or reply VET to reach our team directly.\n\n" +
       "Maazrat, is waqt jawab dene mein masla ho raha hai. Baraye meherbani thori dair baad dobara koshish karen, ya 'VET' likh kar hamari team se raabta karen.";
-    const sendResult = await whatsapp.sendText(farmer.whatsappNumber, fallbackText);
-    await prisma.message.create({
-      data: {
-        farmerId: farmer.id,
-        direction: "OUTBOUND",
-        senderType: "AI_AGENT",
-        contentType: "TEXT",
-        textContent: fallbackText,
-        whatsappMessageId: sendResult.messageId,
-      },
-    });
+    const messageId = await safeSendText(farmer.whatsappNumber, fallbackText);
+    if (messageId) {
+      await prisma.message.create({
+        data: {
+          farmerId: farmer.id,
+          direction: "OUTBOUND",
+          senderType: "AI_AGENT",
+          contentType: "TEXT",
+          textContent: fallbackText,
+          whatsappMessageId: messageId,
+        },
+      });
+    }
     return;
   }
   const reply = buildFarmerReply(diagnosis);
 
   console.log("SENDING REPLY:", reply.text);
-  const sendResult = await whatsapp.sendText(farmer.whatsappNumber, reply.text);
+  // A real diagnosis was reached even if delivery fails (e.g. closed window)
+  // — still record it and continue to escalation/treatment tracking below,
+  // since the farmer's condition doesn't stop being real just because this
+  // particular message didn't reach their phone.
+  const messageId = await safeSendText(farmer.whatsappNumber, reply.text);
 
   const outbound = await prisma.message.create({
     data: {
@@ -169,7 +223,7 @@ async function processInboundMessage(msg: MetaInboundMessage) {
       textContent: reply.text,
       detectedLanguage: diagnosis.detectedLanguage,
       aiDiagnosis: diagnosis as unknown as object,
-      whatsappMessageId: sendResult.messageId,
+      whatsappMessageId: messageId,
     },
   });
 
