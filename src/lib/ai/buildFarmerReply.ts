@@ -22,6 +22,17 @@ const VET_ESCALATION_NOTE: Record<LanguageCode, string> = {
   en: "I'm connecting you with our Field Vet team — they will reach out to you shortly.",
 };
 
+// Every reply a farmer sends re-opens WhatsApp's 24h session window for free —
+// no template needed. Inviting a reply is the one legitimate, no-cost lever
+// that keeps a conversation going longer. Skipped on the escalation path,
+// where "a human will reach out" is already the encouraged next step.
+const FOLLOWUP_NUDGE: Record<LanguageCode, string> = {
+  ur: "چند دنوں میں صورتحال بتائیں، یا کسی بھی وقت نئی تصویر بھیجیں۔",
+  "ur-roman": "Chand dinon mein update batayen, ya kisi bhi waqt nayi tasveer bhejen.",
+  pa: "چند دناں وچ صورتحال دسو، یا کسی وی ویلے نویں تصویر گھلو۔",
+  en: "Reply with an update in a few days, or send a new photo anytime.",
+};
+
 export interface BuiltReply {
   text: string;
   diseaseCode: DiseaseCode;
@@ -53,13 +64,14 @@ export function buildFarmerReply(diagnosis: DiagnosisResult): BuiltReply {
 
   if (medicines.length === 0) {
     // OTHER / UNKNOWN — no protocol to template, just deliver the (allowlist-checked) explanation.
-    return { text: explanation, diseaseCode: diagnosis.diseaseCode, medicines: [], escalateToVet: false };
+    const text = [explanation, FOLLOWUP_NUDGE[lang]].filter(Boolean).join("\n\n");
+    return { text, diseaseCode: diagnosis.diseaseCode, medicines: [], escalateToVet: false };
   }
 
   const medicineLines = `${MEDICINE_LABEL[lang]}:\n` + medicines.map((m) => `- ${m}`).join("\n");
   const notesLine = DISEASE_PROTOCOL[diagnosis.diseaseCode as keyof typeof DISEASE_PROTOCOL]?.notesForFarmer[lang];
 
-  const text = [explanation, medicineLines, notesLine].filter(Boolean).join("\n\n");
+  const text = [explanation, medicineLines, notesLine, FOLLOWUP_NUDGE[lang]].filter(Boolean).join("\n\n");
 
   return { text, diseaseCode: diagnosis.diseaseCode, medicines, escalateToVet: false };
 }
