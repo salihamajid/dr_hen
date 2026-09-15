@@ -12,6 +12,7 @@ export interface ChatTurn {
   role: Role;
   text?: string;
   image?: { base64: string; mimeType: string };
+  audio?: { base64: string; mimeType: string };
 }
 
 // "ur-roman" is Urdu vocabulary/grammar typed in Latin letters (e.g. "masla",

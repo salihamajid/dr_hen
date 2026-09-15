@@ -45,6 +45,11 @@ function toGeminiContent(turn: ChatTurn): Content {
   if (turn.image) {
     parts!.push({ inlineData: { mimeType: turn.image.mimeType, data: turn.image.base64 } });
   }
+  if (turn.audio) {
+    // Gemini understands spoken audio natively via the same inlineData shape —
+    // no separate transcription step needed, one call does both.
+    parts!.push({ inlineData: { mimeType: turn.audio.mimeType, data: turn.audio.base64 } });
+  }
   if (turn.text) {
     parts!.push({ text: turn.text });
   }

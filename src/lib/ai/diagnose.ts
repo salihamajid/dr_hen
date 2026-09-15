@@ -15,3 +15,7 @@ export function textTurn(role: Role, text: string): ChatTurn {
 export function imageTurn(base64Data: string, mimeType: string, caption: string): ChatTurn {
   return { role: "user", text: caption, image: { base64: base64Data, mimeType } };
 }
+
+export function audioTurn(base64Data: string, mimeType: string, caption: string): ChatTurn {
+  return { role: "user", text: caption, audio: { base64: base64Data, mimeType } };
+}
