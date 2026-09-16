@@ -144,7 +144,7 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 xl:h-full xl:overflow-hidden">
+    <div className="dashboard-fit flex min-h-0 flex-col gap-3">
       {/* Upper region — the character is an overlay here so it can bleed across
           the hero band and the table's left edge, as in the reference. */}
       <div className="relative flex min-h-0 flex-1 flex-col gap-3">
@@ -161,12 +161,12 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <div className="relative z-10 min-h-[340px] flex-1 xl:min-h-0 xl:pl-[300px]">
+        <div className="relative z-10 min-h-[300px] flex-1 xl:pl-[300px]">
           <FarmersOverviewTable farmers={farmerRows} totalFarmers={totalFarmers} />
         </div>
       </div>
 
-      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:h-[188px] xl:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:h-[176px] xl:grid-cols-4">
         <TreatmentStatusDonut data={statusData} />
         <CommonDiseasesBarList data={diseaseShares} />
         <UpcomingActionsList actions={upcomingActions} />

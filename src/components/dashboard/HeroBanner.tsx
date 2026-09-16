@@ -52,7 +52,7 @@ export function HeroBanner({
 
 function PreventTreatGrowCard() {
   return (
-    <section className="relative flex h-[104px] items-center justify-between overflow-hidden rounded-2xl bg-brand-green-dark px-5 text-white shadow-sm">
+    <section className="relative flex h-[92px] items-center justify-between overflow-hidden rounded-2xl bg-brand-green-dark px-5 text-white shadow-sm">
       <Image
         src="/images/dr-hen.jpeg"
         alt=""

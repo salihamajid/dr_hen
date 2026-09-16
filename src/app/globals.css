@@ -122,3 +122,14 @@ body {
     animation: none;
   }
 }
+
+/* The dashboard fits one screen only when the screen is actually tall enough
+   for it. Below this the page scrolls normally instead of crushing the farmers
+   table down to a row or two — a short laptop window hitting the locked layout
+   was exactly that bug. */
+@media (min-width: 1280px) and (min-height: 820px) {
+  .dashboard-fit {
+    height: 100%;
+    overflow: hidden;
+  }
+}
