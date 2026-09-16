@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6f5;
+  --background: #f5f7f6;
   --foreground: #14231d;
-  --sidebar-bg: #16211d;
-  --brand-red: #e0392b;
+  --sidebar-bg: #0f1e13;
+  --brand-red: #ff3b30;
   --brand-green: #1f7a4d;
   --brand-green-dark: #14532d;
 }
@@ -47,4 +47,78 @@ body {
 
 .animate-dr-hen-pop {
   animation: dr-hen-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dr. Hen character animation (see components/dashboard/AnimatedDrHen.tsx).
+   Separate transforms live on nested elements so they compose instead of
+   overwriting each other, and so the ground shadow can react to the float
+   without inheriting the body's breathing scale. */
+@keyframes dr-hen-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes dr-hen-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.02);
+  }
+}
+
+@keyframes dr-hen-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.22;
+  }
+  50% {
+    transform: scaleX(0.92);
+    opacity: 0.14;
+  }
+}
+
+@keyframes dr-hen-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dr-hen-float {
+  animation: dr-hen-float 4s ease-in-out infinite;
+}
+
+.dr-hen-breathe {
+  transform-origin: bottom center;
+  animation: dr-hen-breathe 3s ease-in-out infinite;
+}
+
+.dr-hen-shadow {
+  animation: dr-hen-shadow 4s ease-in-out infinite;
+}
+
+.dr-hen-enter {
+  animation: dr-hen-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-hen-float,
+  .dr-hen-breathe,
+  .dr-hen-shadow,
+  .dr-hen-enter,
+  .animate-dr-hen-pop {
+    animation: none;
+  }
 }

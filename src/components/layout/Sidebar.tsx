@@ -33,18 +33,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col bg-sidebar-bg text-white">
-      <div className="flex items-center gap-3 px-6 py-6">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-white">
-          <Image src="/images/dr-hen.jpeg" alt="Dr. Hen" fill sizes="44px" className="object-cover object-top" priority />
+    <div className="flex h-full flex-col overflow-hidden bg-sidebar-bg text-white">
+      <div className="flex shrink-0 flex-col items-center gap-2 px-5 py-5">
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-white">
+          <Image src="/images/dr-hen.jpeg" alt="Dr. Hen" fill sizes="56px" className="object-cover object-top" priority />
         </div>
-        <div>
-          <div className="text-lg font-bold leading-tight">Dr. Hen</div>
-          <div className="text-[11px] uppercase tracking-wide text-white/50">AI Poultry Doctor</div>
+        <div className="text-center">
+          <div className="text-lg font-extrabold leading-tight">Dr. Hen</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-brand-red">AI Poultry Doctor</div>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.icon];
           const active = pathname === item.href || pathname?.startsWith(item.href + "/");
@@ -53,22 +53,32 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                active ? "bg-brand-red text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                active ? "bg-brand-red text-white shadow-sm" : "text-white/65 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[18px] w-[18px] shrink-0" />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-3">
-        <button className="flex w-full items-center gap-2 rounded-lg bg-white/10 px-3 py-3 text-sm font-medium text-white hover:bg-white/20">
-          <MessageCircleHeart className="h-5 w-5" />
-          Need Help? Chat with Dr. Hen
-        </button>
+      <div className="shrink-0 p-3">
+        <Link
+          href="/messages"
+          onClick={onNavigate}
+          className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-3 transition-colors hover:bg-white/10"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+            <MessageCircleHeart className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold leading-tight">Need Help?</span>
+            <span className="block truncate text-[11px] leading-tight text-white/55">Chat with Dr. Hen</span>
+          </span>
+        </Link>
       </div>
     </div>
   );
