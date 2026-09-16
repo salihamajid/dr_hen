@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { Check, Loader2, MessageCircle } from "lucide-react";
 
 export function FarmerActions({ farmerId }: { farmerId: string }) {
   const [sending, setSending] = useState(false);
@@ -22,9 +22,9 @@ export function FarmerActions({ farmerId }: { farmerId: string }) {
       if (!res.ok) {
         throw new Error(body?.error ?? "Failed to send");
       }
-      // The route always returns 200 on success whether it ran through the mock
-      // provider or a real Meta send — "Accepted by Meta" is only true for the
-      // latter, so the label needs to reflect which one actually happened.
+      // The route returns 200 whether it ran through the mock provider or a
+      // real Meta send — only the latter actually reached WhatsApp, so the
+      // label has to reflect which one happened.
       setSentVia(body?.provider === "meta" ? "meta" : "mock");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send");
@@ -33,31 +33,45 @@ export function FarmerActions({ farmerId }: { farmerId: string }) {
     }
   }
 
+  // Label lives in title/aria-label rather than visible text: the full wording
+  // ("Sent (mock — no real message)") is far too wide for a dashboard table
+  // column and was pushing Status and Actions off the right edge.
+  const label = sending
+    ? "Sending…"
+    : sentVia === "meta"
+      ? "Accepted by Meta"
+      : sentVia === "mock"
+        ? "Sent (mock — no real message)"
+        : "Send WhatsApp intro video";
+
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center justify-end gap-1.5">
         <Link
           href={`/farmers/${farmerId}`}
-          className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+          className="rounded-lg border border-black/10 px-2.5 py-1.5 text-xs font-medium hover:bg-black/5"
         >
           View
         </Link>
         <button
           onClick={sendVideo}
-          disabled={sending}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-green px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          disabled={sending || sentVia !== null}
+          title={label}
+          aria-label={label}
+          className={`flex h-7 w-7 items-center justify-center rounded-lg text-white transition-opacity disabled:opacity-60 ${
+            sentVia === "meta" ? "bg-green-600" : sentVia === "mock" ? "bg-black/40" : "bg-brand-green hover:opacity-90"
+          }`}
         >
-          <MessageCircle className="h-3.5 w-3.5" />
-          {sending
-            ? "Sending…"
-            : sentVia === "meta"
-              ? "Accepted by Meta ✓"
-              : sentVia === "mock"
-                ? "Sent (mock — no real message) ✓"
-                : "Send WhatsApp Message"}
+          {sending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          ) : sentVia ? (
+            <Check className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+          )}
         </button>
       </div>
-      {error && <span className="max-w-[220px] text-right text-[11px] text-red-600">{error}</span>}
+      {error && <span className="max-w-[200px] text-right text-[11px] leading-tight text-red-600">{error}</span>}
     </div>
   );
 }

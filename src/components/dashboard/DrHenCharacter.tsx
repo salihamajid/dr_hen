@@ -29,9 +29,9 @@ export function DrHenCharacter({
         src={src}
         alt={alt}
         fill
-        sizes="(min-width: 1280px) 340px, 0px"
+        sizes="(min-width: 1280px) 300px, 0px"
         priority={priority}
-        className="object-contain object-bottom mix-blend-multiply"
+        className="object-contain object-top mix-blend-multiply"
       />
     </div>
   );
