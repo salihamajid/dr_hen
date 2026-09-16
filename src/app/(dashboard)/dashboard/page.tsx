@@ -148,7 +148,7 @@ export default async function DashboardPage() {
       {/* Upper region — the character is an overlay here so it can bleed across
           the hero band and the table's left edge, as in the reference. */}
       <div className="relative flex min-h-0 flex-1 flex-col gap-3">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 hidden w-[350px] xl:block">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 hidden w-[280px] xl:block">
           <AnimatedDrHen className="h-full w-full" priority />
         </div>
 

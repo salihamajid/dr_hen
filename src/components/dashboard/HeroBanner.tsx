@@ -54,7 +54,7 @@ function PreventTreatGrowCard() {
   return (
     <section className="relative flex h-[92px] items-center justify-between overflow-hidden rounded-2xl bg-brand-green-dark px-5 text-white shadow-sm">
       <Image
-        src="/images/dr-hen.jpeg"
+        src="/images/dr-hen-v2.jpeg"
         alt=""
         aria-hidden
         fill

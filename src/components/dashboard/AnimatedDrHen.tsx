@@ -13,7 +13,7 @@ import Image from "next/image";
  * the wing on its own layer) via `src` and those become possible.
  */
 export function AnimatedDrHen({
-  src = "/images/dr-hen.jpeg",
+  src = "/images/dr-hen-v2.jpeg",
   alt = "Dr. Hen, your AI poultry doctor",
   className = "",
   priority = false,
