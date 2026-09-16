@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { AnimatedDrHen } from "@/components/dashboard/AnimatedDrHen";
+import { DrHenCharacter } from "@/components/dashboard/DrHenCharacter";
 import { HeroBanner } from "@/components/dashboard/HeroBanner";
 import { FarmersOverviewTable, issueLabelFor, type FarmerOverviewRow } from "@/components/dashboard/FarmersOverviewTable";
 import { TreatmentStatusDonut, type TreatmentStatusDatum } from "@/components/dashboard/TreatmentStatusDonut";
@@ -148,11 +148,11 @@ export default async function DashboardPage() {
       {/* Upper region — the character is an overlay here so it can bleed across
           the hero band and the table's left edge, as in the reference. */}
       <div className="relative flex min-h-0 flex-1 flex-col gap-3">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 hidden w-[280px] xl:block">
-          <AnimatedDrHen className="h-full w-full" priority />
+        <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[320px] xl:block">
+          <DrHenCharacter className="h-full w-full" priority />
         </div>
 
-        <div className="shrink-0 xl:pl-[300px]">
+        <div className="shrink-0 xl:pl-[344px]">
           <HeroBanner
             totalFarmers={totalFarmers}
             totalBirds={totalBirdsAgg._sum.flockSize ?? 0}
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <div className="relative z-10 min-h-[300px] flex-1 xl:pl-[300px]">
+        <div className="relative z-10 min-h-[300px] flex-1 xl:pl-[344px]">
           <FarmersOverviewTable farmers={farmerRows} totalFarmers={totalFarmers} />
         </div>
       </div>
