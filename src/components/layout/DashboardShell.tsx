@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, adminName }: { children: React.ReactNode; adminName: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -35,7 +35,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar onMenuClick={() => setMobileOpen(true)} adminName={adminName} />
         <main className="min-w-0 flex-1 overflow-y-auto bg-background p-4 md:p-6">{children}</main>
       </div>
     </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { Search, Bell, ChevronDown, Menu } from "lucide-react";
+import { Search, Bell, Menu } from "lucide-react";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
-export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
+export function Topbar({ onMenuClick, adminName }: { onMenuClick?: () => void; adminName: string }) {
   return (
     <header className="flex min-w-0 shrink-0 items-center gap-3 bg-background px-4 py-3 md:px-6">
       <button onClick={onMenuClick} className="rounded-lg p-2 hover:bg-black/5 md:hidden" aria-label="Open menu">
@@ -25,13 +26,15 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-red ring-2 ring-background" />
         </button>
 
-        <button className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 hover:bg-black/5" aria-label="Account menu">
+        <div className="flex items-center gap-2 py-1 pl-1">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green-dark text-xs font-semibold text-white">
-            A
+            {adminName.charAt(0).toUpperCase()}
           </span>
-          <span className="hidden text-sm font-semibold sm:inline">Admin</span>
-          <ChevronDown className="h-4 w-4 text-black/40" />
-        </button>
+          <span className="hidden max-w-[10rem] truncate text-sm font-semibold sm:inline" title={adminName}>
+            {adminName}
+          </span>
+        </div>
+        <LogoutButton className="px-2" />
       </div>
     </header>
   );

@@ -28,6 +28,7 @@ export const getSession = cache(async (): Promise<SessionClaims | null> => {
 
 export interface AdminContext {
   userId: string;
+  email: string;
 }
 
 export interface FarmerContext {
@@ -48,10 +49,10 @@ export const currentAdmin = cache(async (): Promise<AdminContext | null> => {
 
   const user = await prisma.user.findUnique({
     where: { id: session.sub },
-    select: { id: true, role: true, tokenVersion: true },
+    select: { id: true, role: true, tokenVersion: true, email: true },
   });
   if (!user || user.role !== "ADMIN" || user.tokenVersion !== session.ver) return null;
-  return { userId: user.id };
+  return { userId: user.id, email: user.email ?? "admin" };
 });
 
 export const currentFarmer = cache(async (): Promise<FarmerContext | null> => {

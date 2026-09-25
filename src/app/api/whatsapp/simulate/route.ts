@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
 import { handleInboundWebhook } from "@/lib/whatsapp/handleInboundWebhook";
 import type { MetaWebhookPayload, MetaInboundMessage } from "@/lib/whatsapp/types";
@@ -16,6 +17,10 @@ interface SimulateBody {
 }
 
 export async function POST(req: NextRequest) {
+  // Fabricates inbound messages for any farmer: admin only, on top of the proxy.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   if (process.env.NODE_ENV === "production" && process.env.DEMO_MODE !== "true") {
     return NextResponse.json({ error: "Simulate endpoint is disabled outside demo mode" }, { status: 403 });
   }

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/auth/dal";
 import { runDiagnosis, imageTurn } from "@/lib/ai/diagnose";
 import { buildFarmerReply } from "@/lib/ai/buildFarmerReply";
 
 // Standalone image-analysis endpoint for the admin chat widget / manual testing.
 // Same pipeline as the WhatsApp image path in handleInboundWebhook.ts.
 export async function POST(req: NextRequest) {
+  // Paid Gemini call: admin only, on top of the proxy.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const { imageDataUrl, caption } = (await req.json()) as { imageDataUrl: string; caption?: string };
 
   const match = imageDataUrl?.match(/^data:(.+);base64,(.*)$/);

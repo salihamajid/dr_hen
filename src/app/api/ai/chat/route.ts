@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/auth/dal";
 import { runDiagnosis, textTurn } from "@/lib/ai/diagnose";
 import { buildFarmerReply } from "@/lib/ai/buildFarmerReply";
 import type { ChatTurn } from "@/lib/ai/provider";
@@ -8,6 +9,10 @@ import type { ChatTurn } from "@/lib/ai/provider";
 // same runDiagnosis + buildFarmerReply pipeline as the real farmer-facing flow in
 // handleInboundWebhook.ts, so what the admin sees here is what a farmer would get.
 export async function POST(req: NextRequest) {
+  // Paid Gemini call: admin only, on top of the proxy.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const { history } = (await req.json()) as { history: Array<{ role: "user" | "assistant"; text: string }> };
 
   if (!history?.length) {
