@@ -10,6 +10,10 @@ export const NAV_ITEMS = [
   { href: "/settings", label: "Settings", icon: "Settings" },
 ] as const;
 
+// Farmer portal menu. Entries are added as each screen ships, so no link ever
+// points at a page that doesn't exist yet.
+export const FARMER_NAV_ITEMS = [{ href: "/farmer/dashboard", label: "Dashboard", icon: "LayoutDashboard" }] as const;
+
 export const FARMER_STATUS_LABEL: Record<string, string> = {
   HEALTHY: "Healthy",
   AT_RISK: "At Risk",

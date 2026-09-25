@@ -50,6 +50,11 @@ services:
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false
 
+      # Dialable clinic number (digits, country code, no +) for the farmer portal's
+      # "Chat on WhatsApp" wa.me link. Not the same as WHATSAPP_PHONE_NUMBER_ID.
+      - key: WHATSAPP_BUSINESS_NUMBER
+        sync: false
+
       - key: TRANSCRIBE_PROVIDER
         value: mock
       - key: OPENAI_API_KEY
