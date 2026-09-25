@@ -43,6 +43,35 @@ enum DiseaseCode {
 
 enum MessageChannel {
   WHATSAPP
+  IN_APP
+}
+
+enum UserRole {
+  ADMIN
+  FARMER
+}
+
+enum Language {
+  EN
+  UR
+}
+
+enum AlertSeverity {
+  INFO
+  ALERT
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum VentilationLevel {
+  POOR
+  AVERAGE
+  GOOD
 }
 
 enum MessageDirection {
@@ -84,6 +113,8 @@ model Farmer {
   vaccinations   Vaccination[]
   messages       Message[]
   vetEscalations VetEscalation[]
+  user           User?
+  alerts         Alert[]
 }
 
 model Flock {
@@ -100,6 +131,7 @@ model Flock {
   dailyReports DailyReport[]
   treatments   Treatment[]
   vaccinations Vaccination[]
+  alerts       Alert[]
 
   @@index([farmerId])
 }
@@ -116,7 +148,29 @@ model DailyReport {
   mortalityCount Int      @default(0)
   notes          String?
 
+  // Farmer-portal fields. All optional so existing rows and the admin path keep
+  // working. One row per (farmer, flock, day): the Daily Entry and Attributes
+  // screens both upsert this same row, so the fields they share (feed, water,
+  // temperature) can never hold two contradictory values for one day.
+  feedKg         Float?
+  waterLiters    Float?
+  temperatureC   Float?
+  humidityPct    Float?
+  lightHours     Float?
+  ventilation    VentilationLevel?
+  // Farmer-REPORTED history, never a recommendation. Must never be fed to
+  // buildFarmerReply or shown as approved — that would route around the
+  // DISEASE_PROTOCOL medicine allowlist.
+  medicineGiven  String?
+  // Optional on purpose: a required @updatedAt is NOT NULL with no default,
+  // which fails on a table that already has rows.
+  updatedAt      DateTime? @updatedAt
+
   @@index([farmerId, date])
+  // Postgres treats NULLs as distinct, so legacy rows with flockId = null are
+  // NOT deduplicated (intentional — the admin path keeps working). Uniqueness
+  // is guaranteed for the farmer-portal path, where flockId is always set.
+  @@unique([farmerId, flockId, date], name: "daily_report_farmer_flock_date")
 }
 
 // The 12 client-approved medicines. Seeded from src/lib/ai/diseaseProtocol.ts —
@@ -215,4 +269,49 @@ model VetEscalation {
   triggerMessageId  String?
   status            String   @default("PENDING") // PENDING | CONTACTED | RESOLVED
   createdAt         DateTime @default(now())
+}
+
+model User {
+  id           String    @id @default(cuid())
+  // ADMIN logs in by email; FARMER by phone. Each is null for the other role,
+  // which is what makes cross-role login structurally impossible.
+  email        String?   @unique
+  phone        String?   @unique
+  passwordHash String
+  role         UserRole
+  // null = the farmer hasn't picked a language yet -> show the chooser.
+  language     Language?
+  // Bump to invalidate every outstanding session cookie for this user.
+  tokenVersion Int       @default(0)
+  farmerId     String?   @unique
+  farmer       Farmer?   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Alert {
+  id         String        @id @default(cuid())
+  farmerId   String
+  farmer     Farmer        @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  flockId    String?
+  flock      Flock?        @relation(fields: [flockId], references: [id])
+  code       String
+  severity   AlertSeverity
+  status     AlertStatus   @default(OPEN)
+  // Wording is stored in both languages at the moment the alert fires, so it
+  // stays frozen — an alert is a health record, not a live-translated view.
+  titleEn    String
+  titleUr    String
+  bodyEn     String
+  bodyUr     String
+  metrics    Json?
+  // "<farmerId>:<flockId|->:<code>:<YYYY-MM-DD>" — the whole idempotency
+  // mechanism: re-evaluating the same day can never create a second alert.
+  dedupeKey  String        @unique
+  createdAt  DateTime      @default(now())
+  readAt     DateTime?
+  resolvedAt DateTime?
+
+  @@index([farmerId, status, createdAt])
 }
