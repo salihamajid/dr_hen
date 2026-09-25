@@ -19,6 +19,18 @@ services:
       - key: DIRECT_URL
         sync: false # Neon's non-pooled connection string — required by `prisma migrate deploy` (pooled connections can't hold its advisory lock)
 
+      # Signs login session cookies. Render generates a random value once and keeps it
+      # across deploys. Changing it logs everyone out.
+      - key: SESSION_SECRET
+        generateValue: true
+
+      # Only read by `npm run db:seed:admin` (run once in the Render shell) to create
+      # the single admin account. Set both in the dashboard; never commit real values.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
       - key: AI_PROVIDER
         value: gemini
       - key: GEMINI_API_KEY
