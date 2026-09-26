@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 const treatmentInputSchema = z.object({
   farmerId: z.string().min(1),
@@ -13,6 +14,10 @@ const treatmentInputSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const status = req.nextUrl.searchParams.get("status");
   const treatments = await prisma.treatment.findMany({
     where: status ? { status: status as "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE" } : undefined,
@@ -23,6 +28,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const body = await req.json();
   const parsed = treatmentInputSchema.safeParse(body);
   if (!parsed.success) {

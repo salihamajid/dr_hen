@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 export async function GET() {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const [totalFarmers, birdsAgg, treatmentsGiven, messagesSent, treatmentsByStatus, treatmentsByDisease] =
     await Promise.all([
       prisma.farmer.count(),

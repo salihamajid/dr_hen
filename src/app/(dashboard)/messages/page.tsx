@@ -2,10 +2,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
 import { FARMER_STATUS_COLOR, FARMER_STATUS_LABEL } from "@/lib/constants";
+import { requireAdmin } from "@/lib/auth/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function MessagesPage() {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const farmers = await prisma.farmer.findMany({
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
     orderBy: { updatedAt: "desc" },

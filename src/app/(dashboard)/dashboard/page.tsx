@@ -8,6 +8,7 @@ import { CommonDiseasesBarList, type DiseaseShare } from "@/components/dashboard
 import { UpcomingActionsList, type UpcomingAction } from "@/components/dashboard/UpcomingActionsList";
 import { SendReminderCTA } from "@/components/dashboard/SendReminderCTA";
 import { DISEASE_LABEL } from "@/lib/constants";
+import { requireAdmin } from "@/lib/auth/dal";
 
 // Every figure below is read from Postgres on each request — adding a farmer,
 // changing a flock size, or completing a treatment is reflected on the next
@@ -26,6 +27,8 @@ function firstMedicine(value: Prisma.JsonValue): string | null {
 }
 
 export default async function DashboardPage() {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const now = new Date();
   // "Overdue" is partly derived: the schema has an explicit OVERDUE status, but
   // a SCHEDULED/IN_PROGRESS treatment whose nextActionAt has passed is overdue

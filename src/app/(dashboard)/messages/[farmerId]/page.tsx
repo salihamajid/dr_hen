@@ -5,10 +5,13 @@ import { MessageBubble } from "@/components/messages/MessageBubble";
 import { SimulateIncomingPanel } from "@/components/messages/SimulateIncomingPanel";
 import { Badge } from "@/components/ui/Badge";
 import { FARMER_STATUS_COLOR, FARMER_STATUS_LABEL } from "@/lib/constants";
+import { requireAdmin } from "@/lib/auth/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function MessageThreadPage({ params }: { params: Promise<{ farmerId: string }> }) {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const { farmerId } = await params;
 
   const farmer = await prisma.farmer.findUnique({

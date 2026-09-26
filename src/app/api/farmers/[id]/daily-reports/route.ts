@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dailyReportInputSchema } from "@/lib/validators/farmer";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
   const reports = await prisma.dailyReport.findMany({
     where: { farmerId: id },
@@ -13,6 +18,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
   const body = await req.json();
   const parsed = dailyReportInputSchema.safeParse({ ...body, farmerId: id });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 const vaccinationInputSchema = z.object({
   farmerId: z.string().min(1),
@@ -12,6 +13,10 @@ const vaccinationInputSchema = z.object({
 });
 
 export async function GET() {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const vaccinations = await prisma.vaccination.findMany({
     orderBy: { scheduledDate: "asc" },
     include: { farmer: { select: { name: true, location: true } } },
@@ -20,6 +25,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const body = await req.json();
   const parsed = vaccinationInputSchema.safeParse(body);
   if (!parsed.success) {

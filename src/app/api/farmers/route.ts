@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { farmerInputSchema } from "@/lib/validators/farmer";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 export async function GET(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const page = Number(req.nextUrl.searchParams.get("page") ?? "1");
   const pageSize = Number(req.nextUrl.searchParams.get("pageSize") ?? "10");
 
@@ -22,6 +27,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const body = await req.json();
   const parsed = farmerInputSchema.safeParse(body);
   if (!parsed.success) {

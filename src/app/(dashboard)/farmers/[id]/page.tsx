@@ -9,10 +9,13 @@ import {
   TREATMENT_STATUS_LABEL,
   DISEASE_LABEL,
 } from "@/lib/constants";
+import { requireAdmin } from "@/lib/auth/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function FarmerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const { id } = await params;
 
   const farmer = await prisma.farmer.findUnique({

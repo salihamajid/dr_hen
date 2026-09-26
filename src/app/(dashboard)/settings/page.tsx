@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const fieldVets = await prisma.fieldVet.findMany();
 
   const whatsappProvider = process.env.WHATSAPP_PROVIDER === "meta" ? "Real Meta Cloud API" : "Mock (demo mode)";

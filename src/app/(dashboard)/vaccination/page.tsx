@@ -2,10 +2,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
 import { TREATMENT_STATUS_COLOR, TREATMENT_STATUS_LABEL } from "@/lib/constants";
+import { requireAdmin } from "@/lib/auth/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function VaccinationPage() {
+  // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
+  await requireAdmin();
   const vaccinations = await prisma.vaccination.findMany({
     orderBy: { scheduledDate: "asc" },
     include: { farmer: { select: { id: true, name: true, location: true } } },

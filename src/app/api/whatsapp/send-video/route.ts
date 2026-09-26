@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { whatsapp } from "@/lib/whatsapp";
 import { isSessionWindowOpen } from "@/lib/whatsapp/sessionWindow";
+import { requireAdminApi } from "@/lib/auth/dal";
 
 // Before a farmer has ever messaged Dr. Hen, there is no open WhatsApp
 // "customer service window", so the FIRST message to them must go through an
@@ -20,6 +21,10 @@ const INTRO_VIDEO_MEDIA_ID = process.env.INTRO_VIDEO_MEDIA_ID;
 const INTRO_CAPTION = "Hello, how is your chicken? Is it okay? Please send a picture, I will tell you.";
 
 export async function POST(req: NextRequest) {
+  // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+
   const { farmerId } = await req.json();
   if (!farmerId) return NextResponse.json({ error: "farmerId is required" }, { status: 400 });
 
