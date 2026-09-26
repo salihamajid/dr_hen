@@ -14,6 +14,7 @@ export const NAV_ITEMS = [
 // points at a page that doesn't exist yet.
 export const FARMER_NAV_ITEMS = [
   { href: "/farmer/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+  { href: "/farmer/flocks", label: "Flocks", icon: "Bird" },
   { href: "/farmer/assistant", label: "AI Assistant", icon: "Bot" },
 ] as const;
 
