@@ -1,3 +1,4 @@
+import type { Farmer, Message } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { whatsapp } from "./index";
 import type { MetaWebhookPayload, MetaInboundMessage } from "./types";
@@ -127,16 +128,59 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     },
   });
 
+  await respondToFarmerMessage({
+    farmer,
+    inbound,
+    textContent,
+    resolvedImage,
+    resolvedAudio,
+    delivery: whatsappDelivery(farmer.whatsappNumber),
+  });
+}
+
+/** How the AI's reply reaches the farmer: pushed to their phone, or just stored for the in-app chat. */
+export interface Delivery {
+  channel: "WHATSAPP" | "IN_APP";
+  /** Returns Meta's message id, or null if not delivered (always null in-app). */
+  send(text: string): Promise<string | null>;
+}
+
+export const whatsappDelivery = (to: string): Delivery => ({ channel: "WHATSAPP", send: (text) => safeSendText(to, text) });
+export const inAppDelivery: Delivery = { channel: "IN_APP", send: async () => null };
+
+/**
+ * Everything that happens after a farmer's message is stored: VET shortcut, history
+ * replay, diagnosis, the guardrailed reply (medicine names only ever come from
+ * buildFarmerReply/DISEASE_PROTOCOL), escalation and treatment tracking. Shared by the
+ * WhatsApp webhook and the farmer portal's in-app chat so both behave identically,
+ * and only the delivery differs.
+ */
+export async function respondToFarmerMessage({
+  farmer,
+  inbound,
+  textContent,
+  resolvedImage,
+  resolvedAudio,
+  delivery,
+}: {
+  farmer: Farmer;
+  inbound: Message;
+  textContent: string;
+  resolvedImage: { base64: string; mimeType: string } | null;
+  resolvedAudio: { base64: string; mimeType: string } | null;
+  delivery: Delivery;
+}) {
   // "VET" trigger — short-circuit straight to escalation without calling the AI.
   if (/\bvet\b/i.test(textContent)) {
     const ackText =
       "Connecting you with our Field Vet team — they will reach out to you shortly.\n" +
       "میں آپ کو ہماری فیلڈ ویٹرنری ٹیم سے جوڑ رہا ہوں، وہ جلد آپ سے رابطہ کریں گے۔";
-    const messageId = await safeSendText(farmer.whatsappNumber, ackText);
-    if (messageId) {
+    const messageId = await delivery.send(ackText);
+    if (messageId || delivery.channel === "IN_APP") {
       await prisma.message.create({
         data: {
           farmerId: farmer.id,
+          channel: delivery.channel,
           direction: "OUTBOUND",
           senderType: "AI_AGENT",
           contentType: "TEXT",
@@ -190,11 +234,12 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     const fallbackText =
       "Sorry, I'm having trouble responding right now. Please try again in a moment, or reply VET to reach our team directly.\n\n" +
       "Maazrat, is waqt jawab dene mein masla ho raha hai. Baraye meherbani thori dair baad dobara koshish karen, ya 'VET' likh kar hamari team se raabta karen.";
-    const messageId = await safeSendText(farmer.whatsappNumber, fallbackText);
-    if (messageId) {
+    const messageId = await delivery.send(fallbackText);
+    if (messageId || delivery.channel === "IN_APP") {
       await prisma.message.create({
         data: {
           farmerId: farmer.id,
+          channel: delivery.channel,
           direction: "OUTBOUND",
           senderType: "AI_AGENT",
           contentType: "TEXT",
@@ -212,11 +257,12 @@ async function processInboundMessage(msg: MetaInboundMessage) {
   // — still record it and continue to escalation/treatment tracking below,
   // since the farmer's condition doesn't stop being real just because this
   // particular message didn't reach their phone.
-  const messageId = await safeSendText(farmer.whatsappNumber, reply.text);
+  const messageId = await delivery.send(reply.text);
 
   const outbound = await prisma.message.create({
     data: {
       farmerId: farmer.id,
+      channel: delivery.channel,
       direction: "OUTBOUND",
       senderType: "AI_AGENT",
       contentType: "TEXT",

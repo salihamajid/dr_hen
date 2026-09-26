@@ -28,9 +28,10 @@ export async function POST(req: NextRequest) {
 
   // Simulated inbound messages (whatsappMessageId "sim.*", from the demo panel)
   // never reached Meta, so they can't have opened a real session window there —
-  // only a genuine webhook-received message counts.
+  // only a genuine webhook-received message counts. In-app chat messages (channel
+  // IN_APP) never touch Meta either, so they're excluded explicitly.
   const lastRealInbound = await prisma.message.findFirst({
-    where: { farmerId: farmer.id, direction: "INBOUND", NOT: { whatsappMessageId: { startsWith: "sim." } } },
+    where: { farmerId: farmer.id, channel: "WHATSAPP", direction: "INBOUND", NOT: { whatsappMessageId: { startsWith: "sim." } } },
     orderBy: { createdAt: "desc" },
   });
   const windowOpen = !!lastRealInbound && Date.now() - lastRealInbound.createdAt.getTime() < CUSTOMER_SERVICE_WINDOW_MS;

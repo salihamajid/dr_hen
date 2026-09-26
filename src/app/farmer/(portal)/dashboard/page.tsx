@@ -3,23 +3,17 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AssistantPanel } from "@/components/farmer/AssistantPanel";
 import { requireFarmer } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
+import { whatsappChatLink } from "@/lib/whatsapp/businessNumber";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-// wa.me needs the dialable number in digits only. WHATSAPP_PHONE_NUMBER_ID is Meta's
-// internal id and is NOT dialable, hence the separate variable.
-function whatsappLink(): string | null {
-  const digits = (process.env.WHATSAPP_BUSINESS_NUMBER ?? "").replace(/\D/g, "");
-  if (digits.length < 8) return null;
-  return `https://wa.me/${digits}?text=${encodeURIComponent("Hello Dr. Hen")}`;
-}
+const weekAgo = () => new Date(Date.now() - WEEK_MS);
 
 export default async function FarmerDashboardPage() {
   // The only source of farmerId on this page: the verified session, never the request.
   const { farmerId } = await requireFarmer();
-  const weekStart = new Date(Date.now() - WEEK_MS);
+  const weekStart = weekAgo();
 
-  const [farmer, flocks, activeAlerts, week] = await Promise.all([
+  const [farmer, flocks, activeAlerts, week, waLink] = await Promise.all([
     prisma.farmer.findFirst({ where: { id: farmerId }, select: { name: true, location: true } }),
     prisma.flock.aggregate({ where: { farmerId, active: true }, _count: { _all: true }, _sum: { sizeCount: true } }),
     prisma.alert.count({ where: { farmerId, status: "OPEN" } }),
@@ -28,6 +22,7 @@ export default async function FarmerDashboardPage() {
       _count: { _all: true },
       _sum: { mortalityCount: true },
     }),
+    whatsappChatLink(),
   ]);
 
   const fmt = (n: number) => n.toLocaleString("en-IN");
@@ -56,7 +51,7 @@ export default async function FarmerDashboardPage() {
         />
       </div>
 
-      <AssistantPanel aiChatHref={null} whatsappHref={whatsappLink()} />
+      <AssistantPanel aiChatHref="/farmer/assistant" whatsappHref={waLink} />
     </div>
   );
 }
