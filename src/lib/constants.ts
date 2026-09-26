@@ -15,6 +15,8 @@ export const NAV_ITEMS = [
 export const FARMER_NAV_ITEMS = [
   { href: "/farmer/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/farmer/flocks", label: "Flocks", icon: "Bird" },
+  { href: "/farmer/daily-entry", label: "Daily Entry", icon: "ClipboardList" },
+  { href: "/farmer/attributes", label: "Attributes", icon: "SlidersHorizontal" },
   { href: "/farmer/assistant", label: "AI Assistant", icon: "Bot" },
 ] as const;
 
