@@ -1,4 +1,5 @@
 import { Bot, MessageCircle } from "lucide-react";
+import type { T } from "@/lib/i18n";
 
 /**
  * The two chat routes side by side. "Chat with AI Assistant" is the in-app chat
@@ -6,7 +7,7 @@ import { Bot, MessageCircle } from "lucide-react";
  * plain wa.me link to the clinic number, so it needs no second WhatsApp connection
  * or webhook.
  */
-export function AssistantPanel({ aiChatHref, whatsappHref }: { aiChatHref: string | null; whatsappHref: string | null }) {
+export function AssistantPanel({ aiChatHref, whatsappHref, t }: { aiChatHref: string | null; whatsappHref: string | null; t: T }) {
   const base = "flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors";
   const disabled = `${base} cursor-not-allowed bg-black/5 text-black/40`;
 
@@ -17,19 +18,19 @@ export function AssistantPanel({ aiChatHref, whatsappHref }: { aiChatHref: strin
           <Bot className="h-5 w-5" aria-hidden />
         </span>
         <div>
-          <h2 className="text-base font-bold leading-tight">Dr. Hen Assistant</h2>
-          <p className="text-xs text-black/50">Ask any poultry question, any time.</p>
+          <h2 className="text-base font-bold leading-tight">{t("assistant.title")}</h2>
+          <p className="text-xs text-black/50">{t("assistant.subtitle")}</p>
         </div>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {aiChatHref ? (
           <a href={aiChatHref} className={`${base} bg-brand-green-dark text-white hover:bg-brand-green`}>
-            <Bot className="h-4 w-4" aria-hidden /> Chat with AI Assistant
+            <Bot className="h-4 w-4" aria-hidden /> {t("assistant.chatAi")}
           </a>
         ) : (
           <button type="button" disabled className={disabled}>
-            <Bot className="h-4 w-4" aria-hidden /> Chat with AI Assistant · soon
+            <Bot className="h-4 w-4" aria-hidden /> {t("assistant.chatAi")}
           </button>
         )}
         {whatsappHref ? (
@@ -39,11 +40,11 @@ export function AssistantPanel({ aiChatHref, whatsappHref }: { aiChatHref: strin
             rel="noopener noreferrer"
             className={`${base} bg-[#25d366] text-white hover:bg-[#1fb857]`}
           >
-            <MessageCircle className="h-4 w-4" aria-hidden /> Chat on WhatsApp
+            <MessageCircle className="h-4 w-4" aria-hidden /> {t("assistant.chatWhatsapp")}
           </a>
         ) : (
           <button type="button" disabled className={disabled}>
-            <MessageCircle className="h-4 w-4" aria-hidden /> Chat on WhatsApp · unavailable
+            <MessageCircle className="h-4 w-4" aria-hidden /> {t("assistant.whatsappUnavailable")}
           </button>
         )}
       </div>

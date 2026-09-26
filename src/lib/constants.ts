@@ -13,13 +13,14 @@ export const NAV_ITEMS = [
 // Farmer portal menu. Entries are added as each screen ships, so no link ever
 // points at a page that doesn't exist yet.
 export const FARMER_NAV_ITEMS = [
-  { href: "/farmer/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
-  { href: "/farmer/flocks", label: "Flocks", icon: "Bird" },
-  { href: "/farmer/daily-entry", label: "Daily Entry", icon: "ClipboardList" },
-  { href: "/farmer/attributes", label: "Attributes", icon: "SlidersHorizontal" },
-  { href: "/farmer/reports", label: "Reports", icon: "FileBarChart" },
-  { href: "/farmer/alerts", label: "Alerts", icon: "Bell" },
-  { href: "/farmer/assistant", label: "AI Assistant", icon: "Bot" },
+  { href: "/farmer/dashboard", labelKey: "nav.dashboard", icon: "LayoutDashboard" },
+  { href: "/farmer/flocks", labelKey: "nav.flocks", icon: "Bird" },
+  { href: "/farmer/daily-entry", labelKey: "nav.dailyEntry", icon: "ClipboardList" },
+  { href: "/farmer/attributes", labelKey: "nav.attributes", icon: "SlidersHorizontal" },
+  { href: "/farmer/reports", labelKey: "nav.reports", icon: "FileBarChart" },
+  { href: "/farmer/alerts", labelKey: "nav.alerts", icon: "Bell" },
+  { href: "/farmer/assistant", labelKey: "nav.assistant", icon: "Bot" },
+  { href: "/farmer/settings", labelKey: "nav.settings", icon: "Settings" },
 ] as const;
 
 export const FARMER_STATUS_LABEL: Record<string, string> = {

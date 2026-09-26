@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 
-export function LogoutButton({ className = "" }: { className?: string }) {
+export function LogoutButton({ className = "", label = "Sign out", pendingLabel = "Signing out…" }: { className?: string; label?: string; pendingLabel?: string }) {
   const [pending, setPending] = useState(false);
 
   async function logout() {
@@ -32,7 +32,7 @@ export function LogoutButton({ className = "" }: { className?: string }) {
       className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-60 ${className}`}
     >
       <LogOut className="h-4 w-4" aria-hidden />
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }

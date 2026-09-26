@@ -4,13 +4,15 @@ import { Bird } from "lucide-react";
 import { AddFlockForm } from "@/components/farmer/AddFlockForm";
 import { requireFarmer } from "@/lib/auth/dal";
 import { flockAgeWeeks } from "@/lib/flocks";
+import { getT } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "My Flocks — Dr. Hen" };
 export const dynamic = "force-dynamic";
 
 export default async function FarmerFlocksPage() {
-  const { farmerId } = await requireFarmer();
+  const { farmerId, language } = await requireFarmer();
+  const t = getT(language);
 
   const flocks = await prisma.flock.findMany({
     where: { farmerId },
@@ -22,8 +24,8 @@ export default async function FarmerFlocksPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">My Flocks</h1>
-          <p className="text-xs text-black/50">Keep this list matching the birds on your farm.</p>
+          <h1 className="text-xl font-bold">{t("flocks.title")}</h1>
+          <p className="text-xs text-black/50">{t("flocks.subtitle")}</p>
         </div>
       </div>
 
@@ -31,7 +33,7 @@ export default async function FarmerFlocksPage() {
 
       {flocks.length === 0 ? (
         <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">
-          No flocks yet. Add your first flock to start recording daily data.
+          {t("flocks.empty")}
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,17 +49,17 @@ export default async function FarmerFlocksPage() {
                     <p className="truncate text-xs text-black/50">{f.breed}</p>
                   </div>
                 </div>
-                {!f.active && <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/50">Inactive</span>}
+                {!f.active && <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/50">{t("flocks.inactive")}</span>}
               </div>
 
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <div className="rounded-xl bg-black/[0.03] px-3 py-2">
-                  <dt className="text-[11px] text-black/45">Birds</dt>
+                  <dt className="text-[11px] text-black/45">{t("flocks.birds")}</dt>
                   <dd className="font-bold">{f.sizeCount.toLocaleString("en-IN")}</dd>
                 </div>
                 <div className="rounded-xl bg-black/[0.03] px-3 py-2">
-                  <dt className="text-[11px] text-black/45">Age</dt>
-                  <dd className="font-bold">{flockAgeWeeks(f.startDate)} weeks</dd>
+                  <dt className="text-[11px] text-black/45">{t("flocks.age")}</dt>
+                  <dd className="font-bold">{flockAgeWeeks(f.startDate)} {t("flocks.weeks")}</dd>
                 </div>
               </dl>
 
@@ -65,7 +67,7 @@ export default async function FarmerFlocksPage() {
                 href={`/farmer/flocks/${f.id}`}
                 className="mt-auto rounded-xl border border-brand-green-dark px-4 py-2 text-center text-sm font-semibold text-brand-green-dark hover:bg-brand-green-dark hover:text-white"
               >
-                View Details
+                {t("flocks.viewDetails")}
               </Link>
             </article>
           ))}

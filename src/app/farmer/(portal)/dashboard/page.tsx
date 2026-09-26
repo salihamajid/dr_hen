@@ -2,6 +2,7 @@ import { Bell, Bird, ClipboardList, Layers } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AssistantPanel } from "@/components/farmer/AssistantPanel";
 import { requireFarmer } from "@/lib/auth/dal";
+import { getT } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { whatsappChatLink } from "@/lib/whatsapp/businessNumber";
 
@@ -10,7 +11,8 @@ const weekAgo = () => new Date(Date.now() - WEEK_MS);
 
 export default async function FarmerDashboardPage() {
   // The only source of farmerId on this page: the verified session, never the request.
-  const { farmerId } = await requireFarmer();
+  const { farmerId, language } = await requireFarmer();
+  const t = getT(language);
   const weekStart = weekAgo();
 
   const [farmer, flocks, activeAlerts, week, waLink] = await Promise.all([
@@ -30,28 +32,28 @@ export default async function FarmerDashboardPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4">
       <section className="rounded-2xl bg-brand-green-dark p-6 text-white shadow-sm">
-        <p className="text-sm text-white/70">Welcome back, {farmer?.name}</p>
+        <p className="text-sm text-white/70">{t("common.welcomeBack")}, {farmer?.name}</p>
         <h1 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-          Healthy Flocks, Stronger Farm
+          {t("dashboard.headline")}
         </h1>
         <p className="mt-2 max-w-xl text-sm text-white/75">
-          Disease detection, treatment guidance, daily reporting and expert advice, all in one place.
+          {t("dashboard.tagline")}
         </p>
       </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Layers} label="My Flocks" value={fmt(flocks._count._all)} tint="green" />
-        <StatCard icon={Bird} label="Total Birds" value={fmt(flocks._sum.sizeCount ?? 0)} tint="blue" />
-        <StatCard icon={Bell} label="Active Alerts" value={fmt(activeAlerts)} tint={activeAlerts > 0 ? "red" : "amber"} />
+        <StatCard icon={Layers} label={t("dashboard.myFlocks")} value={fmt(flocks._count._all)} tint="green" />
+        <StatCard icon={Bird} label={t("dashboard.totalBirds")} value={fmt(flocks._sum.sizeCount ?? 0)} tint="blue" />
+        <StatCard icon={Bell} label={t("dashboard.activeAlerts")} value={fmt(activeAlerts)} tint={activeAlerts > 0 ? "red" : "amber"} />
         <StatCard
           icon={ClipboardList}
-          label={`This Week · ${fmt(week._count._all)} ${week._count._all === 1 ? "entry" : "entries"}`}
-          value={`${fmt(week._sum.mortalityCount ?? 0)} deaths`}
+          label={`${t("dashboard.thisWeek")} · ${fmt(week._count._all)} ${week._count._all === 1 ? t("dashboard.entry") : t("dashboard.entries")}`}
+          value={`${fmt(week._sum.mortalityCount ?? 0)} ${t("dashboard.deaths")}`}
           tint="amber"
         />
       </div>
 
-      <AssistantPanel aiChatHref="/farmer/assistant" whatsappHref={waLink} />
+      <AssistantPanel aiChatHref="/farmer/assistant" whatsappHref={waLink} t={t} />
     </div>
   );
 }
