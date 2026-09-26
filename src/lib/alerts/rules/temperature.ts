@@ -1,4 +1,5 @@
 import { THRESHOLDS } from "../thresholds";
+import { both, word } from "../messages";
 import type { AlertCandidate, Rule } from "../types";
 import { iso } from "./mortality";
 
@@ -31,16 +32,26 @@ export const temperatureOutOfRange: Rule = {
       if (outBy <= 0) continue;
 
       const severity = outBy >= THRESHOLDS.temperature.criticalMarginC ? "CRITICAL" : "ALERT";
-      const direction = below > 0 ? "too low" : "too high";
+      const dirKey = below > 0 ? "alertmsg.tempLow" : "alertmsg.tempHigh";
+      const vars = (l: "EN" | "UR") => ({
+        direction: word(l, dirKey),
+        temp: r.temperatureC as number,
+        date: iso(r.date),
+        flock: ctx.flock.name,
+        week: band.week,
+        min: band.min,
+        max: band.max,
+      });
+      const title = both("alertmsg.tempTitle", vars);
+      const body = both("alertmsg.tempBody", vars);
       out.push({
         code: "TEMPERATURE_OUT_OF_RANGE",
         severity,
         dateKey: iso(r.date),
-        titleEn: `Temperature ${direction}: ${r.temperatureC}°C on ${iso(r.date)}`,
-        bodyEn:
-          `${ctx.flock.name} recorded ${r.temperatureC}°C on ${iso(r.date)}. For birds in week ${band.week} a comfortable range is about ` +
-          `${band.min}–${band.max}°C, so this is ${direction}. Check heating, ventilation and the birds' behaviour. ` +
-          `If the birds look distressed, contact your vet.`,
+        titleEn: title.en,
+        titleUr: title.ur,
+        bodyEn: body.en,
+        bodyUr: body.ur,
         metrics: { temperatureC: r.temperatureC, week: band.week, min: band.min, max: band.max },
       });
     }

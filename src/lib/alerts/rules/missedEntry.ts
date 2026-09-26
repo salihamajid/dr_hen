@@ -1,4 +1,5 @@
 import { THRESHOLDS } from "../thresholds";
+import { both } from "../messages";
 import type { Rule } from "../types";
 import { iso } from "./mortality";
 
@@ -14,15 +15,18 @@ export const missedEntry: Rule = {
     if (flockStartDay > yesterday.getTime()) return []; // the flock didn't exist yet
     if (ctx.reports.some((r) => r.date.getTime() === yesterday.getTime())) return [];
 
+    const vars = () => ({ flock: ctx.flock.name, date: iso(yesterday) });
+    const title = both("alertmsg.missedTitle", vars);
+    const body = both("alertmsg.missedBody", vars);
     return [
       {
         code: "MISSED_ENTRY",
         severity: "INFO",
         dateKey: iso(yesterday),
-        titleEn: `No entry for ${ctx.flock.name} on ${iso(yesterday)}`,
-        bodyEn:
-          `You haven't recorded feed, water, deaths or temperature for ${ctx.flock.name} on ${iso(yesterday)}. ` +
-          `You can still add it from Daily Entry. Regular entries keep your reports and alerts accurate.`,
+        titleEn: title.en,
+        titleUr: title.ur,
+        bodyEn: body.en,
+        bodyUr: body.ur,
         metrics: { date: iso(yesterday) },
       },
     ];

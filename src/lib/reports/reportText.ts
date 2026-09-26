@@ -1,61 +1,71 @@
-import { GROWTH_STATUS_LABEL, GROWTH_REFERENCE_NOTE } from "./growthStandards";
+import { getT, type I18nKey, type T } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 import type { LoadedReport } from "./queries";
 
-const n = (v: number | null | undefined, unit = "") => (v === null || v === undefined ? "not recorded" : `${v.toLocaleString("en-IN")}${unit}`);
-const VENT: Record<string, string> = { POOR: "Poor", AVERAGE: "Average", GOOD: "Good" };
+const EN: T = getT("EN");
 
-/** The report as ordered label/value rows: the single source for the WhatsApp text and the PDF. */
-export function reportRows(r: LoadedReport): { title: string; subtitle: string; rows: [string, string][] } {
+/** The report as ordered label/value rows: the single source for the screen, the WhatsApp text and the PDF. */
+export function reportRows(r: LoadedReport, t: T = EN): { title: string; subtitle: string; rows: [string, string][] } {
+  const n = (v: number | null | undefined, unit = "") => (v === null || v === undefined ? t("rep.notRecorded") : `${v.toLocaleString("en-IN")}${unit}`);
   const who = `${r.flock.name} (${r.flock.breed})`;
+  // Units stay Latin (g, kg, L, °C) in both languages: they are what the farm scales and jugs are marked with.
 
   if (r.type === "mortality") {
     return {
-      title: "Mortality Report",
-      subtitle: `${who}, ${r.from} to ${r.to}`,
+      title: t("rep.title.mortality"),
+      subtitle: t("rep.subRange", { who, from: r.from, to: r.to }),
       rows: [
-        ["Total birds", n(r.totalBirds)],
-        ["Total mortality", `${n(r.totalDeaths)} birds`],
-        ["Mortality %", `${r.percent}%`],
-        ["Days with an entry", `${r.entryDays} of ${r.days.length}`],
+        [t("rep.totalBirds"), r.totalBirds.toLocaleString("en-IN")],
+        [t("rep.totalMortality"), t("rep.nBirds", { n: r.totalDeaths.toLocaleString("en-IN") })],
+        [t("rep.mortalityPct"), `${r.percent}%`],
+        [t("rep.daysWithEntry"), t("rep.aOfB", { a: r.entryDays, b: r.days.length })],
       ],
     };
   }
 
   if (r.type === "growth") {
     const rows: [string, string][] = [
-      ["Current weight", r.current ? `${n(r.current.grams, " g")} (day ${r.current.ageDays}, ${r.current.date})` : "no weight recorded"],
-      ["Expected weight", r.expectedGrams ? n(r.expectedGrams, " g") : r.hasReference ? "n/a" : "no reference for this breed"],
-      ["Growth rate", r.status ? GROWTH_STATUS_LABEL[r.status] : "n/a"],
+      [
+        t("rep.currentWeight"),
+        r.current ? t("rep.currentWeightVal", { g: r.current.grams.toLocaleString("en-IN"), d: r.current.ageDays, date: r.current.date }) : t("rep.noWeight"),
+      ],
+      [t("rep.expectedWeight"), r.expectedGrams ? `${r.expectedGrams.toLocaleString("en-IN")} g` : r.hasReference ? t("common.na") : t("rep.noRefBreedShort")],
+      [t("rep.growthRate"), r.status ? t(`growth.${r.status}` as I18nKey) : t("common.na")],
     ];
-    return { title: "Growth Report", subtitle: `${who}, ${r.period === "all" ? "all weeks" : `weeks ${r.period}`}`, rows };
+    return {
+      title: t("rep.title.growth"),
+      subtitle: `${who}, ${r.period === "all" ? t("rep.allWeeks") : t("rep.weeksOf", { p: r.period })}`,
+      rows,
+    };
   }
 
   const e = r.entry;
   return {
-    title: "Daily Report",
+    title: t("rep.title.daily"),
     subtitle: `${who}, ${r.date}`,
     rows: e
       ? [
-          ["Feed used", n(e.feedKg, " kg")],
-          ["Water used", n(e.waterLiters, " L")],
-          ["Mortality", `${e.mortalityCount} birds`],
-          ["Average weight", n(e.avgWeightGrams, " g")],
-          ["Temperature", n(e.temperatureC, " °C")],
-          ["Humidity", n(e.humidityPct, "%")],
-          ["Light", n(e.lightHours, " hours")],
-          ["Ventilation", e.ventilation ? VENT[e.ventilation] : "not recorded"],
+          [t("rep.feedUsed"), n(e.feedKg, " kg")],
+          [t("rep.waterUsed"), n(e.waterLiters, " L")],
+          [t("rep.mortality"), t("rep.nBirds", { n: e.mortalityCount })],
+          [t("rep.avgWeight"), n(e.avgWeightGrams, " g")],
+          [t("rep.temperature"), n(e.temperatureC, " °C")],
+          [t("rep.humidity"), n(e.humidityPct, "%")],
+          [t("rep.light"), e.lightHours === null ? t("rep.notRecorded") : t("rep.lightVal", { n: e.lightHours })],
+          [t("rep.ventilation"), e.ventilation ? t(`vent.${e.ventilation}` as I18nKey) : t("rep.notRecorded")],
           // Farmer-reported history only, labelled as such. Never a recommendation.
-          ["Medicine given (as recorded by you)", e.medicineGiven || "none recorded"],
-          ["Remarks", e.notes || "none"],
+          [t("rep.medicine"), e.medicineGiven || t("rep.noneRecorded")],
+          [t("rep.remarks"), e.notes || t("rep.none")],
         ]
-      : [["Status", "No entry saved for this day"]],
+      : [[t("rep.status"), t("rep.noEntryDay")]],
   };
 }
 
-export function reportToText(r: LoadedReport, farmerName: string): string {
-  const { title, subtitle, rows } = reportRows(r);
-  const lines = [`*Dr. Hen: ${title}*`, `${farmerName}`, subtitle, "", ...rows.map(([k, v]) => `${k}: ${v}`)];
-  if (r.type === "growth" && r.hasReference) lines.push("", GROWTH_REFERENCE_NOTE);
-  lines.push("", "This report summarises your own records. It does not replace a vet's assessment.");
+export function reportToText(r: LoadedReport, farmerName: string, lang: Lang = "EN"): string {
+  const t = getT(lang);
+  const { title, subtitle, rows } = reportRows(r, t);
+  const lines = [`*${t("rep.whatsappTitle", { title })}*`, farmerName, subtitle, "", ...rows.map(([k, v]) => `${k}: ${v}`)];
+  if (r.type === "growth" && r.hasReference) lines.push("", t("reports.refNote"));
+  lines.push("", t("rep.footer"));
   return lines.join("\n");
 }

@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { BellRing } from "lucide-react";
 import { SeverityBadge } from "@/components/farmer/AlertBadge";
 import { requireFarmer } from "@/lib/auth/dal";
 import { getT } from "@/lib/i18n";
+import { localizedTitle } from "@/lib/i18n/metadata";
 import { prisma } from "@/lib/prisma";
 
-export const metadata: Metadata = { title: "Alerts — Dr. Hen" };
+export const generateMetadata = () => localizedTitle("title.alerts");
 export const dynamic = "force-dynamic";
 
 export default async function AlertsPage() {
@@ -15,19 +15,19 @@ export default async function AlertsPage() {
 
   const alerts = await prisma.alert.findMany({
     where: { farmerId },
-    // Unresolved first, then newest.
     orderBy: [{ createdAt: "desc" }],
     take: 100,
-    select: { id: true, severity: true, status: true, titleEn: true, createdAt: true, readAt: true, flock: { select: { name: true } } },
+    select: { id: true, severity: true, status: true, titleEn: true, titleUr: true, createdAt: true, readAt: true, flock: { select: { name: true } } },
   });
   const open = alerts.filter((a) => a.status !== "RESOLVED");
   const resolved = alerts.filter((a) => a.status === "RESOLVED");
 
   const row = (a: (typeof alerts)[number]) => (
     <li key={a.id} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <SeverityBadge severity={a.severity} />
+      <SeverityBadge severity={a.severity} label={t(`severity.${a.severity}`)} />
       <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm ${a.readAt ? "font-medium" : "font-bold"}`}>{a.titleEn}</p>
+        {/* The wording was saved in both languages when the alert fired. */}
+        <p className={`truncate text-sm ${a.readAt ? "font-medium" : "font-bold"}`}>{language === "UR" ? a.titleUr : a.titleEn}</p>
         <p className="text-[11px] text-black/45">
           {a.flock?.name ?? t("alerts.allFlocks")} · {a.createdAt.toLocaleDateString("en-GB", { timeZone: "UTC" })}
           {a.status === "ACKNOWLEDGED" && ` · ${t("alerts.acknowledged")}`}
@@ -47,9 +47,7 @@ export default async function AlertsPage() {
       </div>
 
       {alerts.length === 0 ? (
-        <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">
-          {t("alerts.empty")}
-        </p>
+        <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">{t("alerts.empty")}</p>
       ) : (
         <>
           {open.length > 0 && <ul className="flex flex-col gap-2">{open.map(row)}</ul>}

@@ -2,34 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMsg, useT } from "./I18nProvider";
+import type { I18nKey } from "@/lib/i18n";
 
 type Mode = "daily" | "attributes";
 type Entry = Record<string, string | number | null>;
-type Field = { name: string; label: string; kind: "number" | "text" | "textarea" | "select"; step?: string; unit?: string; required?: boolean; options?: string[] };
+type Field = { name: string; labelKey: I18nKey; kind: "number" | "text" | "textarea" | "select"; step?: string; unitKey?: I18nKey; unitText?: string; required?: boolean; options?: string[] };
 
 const FIELDS: Record<Mode, Field[]> = {
   daily: [
-    { name: "feedKg", label: "Feed used", kind: "number", step: "0.1", unit: "kg" },
-    { name: "waterLiters", label: "Water used", kind: "number", step: "0.1", unit: "litres" },
-    { name: "mortalityCount", label: "Mortality", kind: "number", step: "1", unit: "birds", required: true },
-    { name: "avgWeightGrams", label: "Average bird weight", kind: "number", step: "1", unit: "g" },
-    { name: "medicineGiven", label: "Medicine given (your record)", kind: "text" },
-    { name: "temperatureC", label: "Temperature", kind: "number", step: "0.1", unit: "°C" },
-    { name: "notes", label: "Remarks", kind: "textarea" },
+    { name: "feedKg", labelKey: "field.feedUsed", kind: "number", step: "0.1", unitKey: "unit.kg" },
+    { name: "waterLiters", labelKey: "field.waterUsed", kind: "number", step: "0.1", unitKey: "unit.litres" },
+    { name: "mortalityCount", labelKey: "field.mortality", kind: "number", step: "1", unitKey: "unit.birds", required: true },
+    { name: "avgWeightGrams", labelKey: "field.avgWeight", kind: "number", step: "1", unitKey: "unit.g" },
+    { name: "medicineGiven", labelKey: "field.medicine", kind: "text" },
+    { name: "temperatureC", labelKey: "field.temperature", kind: "number", step: "0.1", unitText: "°C" },
+    { name: "notes", labelKey: "field.remarks", kind: "textarea" },
   ],
   attributes: [
-    { name: "feedKg", label: "Feed intake", kind: "number", step: "0.1", unit: "kg" },
-    { name: "waterLiters", label: "Water intake", kind: "number", step: "0.1", unit: "litres" },
-    { name: "temperatureC", label: "Temperature", kind: "number", step: "0.1", unit: "°C" },
-    { name: "humidityPct", label: "Humidity", kind: "number", step: "1", unit: "%" },
-    { name: "lightHours", label: "Light hours", kind: "number", step: "0.5", unit: "hours" },
-    { name: "ventilation", label: "Ventilation", kind: "select", options: ["POOR", "AVERAGE", "GOOD"] },
+    { name: "feedKg", labelKey: "field.feedIntake", kind: "number", step: "0.1", unitKey: "unit.kg" },
+    { name: "waterLiters", labelKey: "field.waterIntake", kind: "number", step: "0.1", unitKey: "unit.litres" },
+    { name: "temperatureC", labelKey: "field.temperature", kind: "number", step: "0.1", unitText: "°C" },
+    { name: "humidityPct", labelKey: "field.humidity", kind: "number", step: "1", unitText: "%" },
+    { name: "lightHours", labelKey: "field.light", kind: "number", step: "0.5", unitKey: "unit.hours" },
+    { name: "ventilation", labelKey: "field.ventilation", kind: "select", options: ["POOR", "AVERAGE", "GOOD"] },
   ],
 };
 
 const ENDPOINT: Record<Mode, string> = { daily: "/api/farmer/daily-entry", attributes: "/api/farmer/parameters" };
-const SAVE_LABEL: Record<Mode, string> = { daily: "Save Entry", attributes: "Save Parameters" };
-const VENT_LABEL: Record<string, string> = { POOR: "Poor", AVERAGE: "Average", GOOD: "Good" };
 
 // The farmer's own calendar day, not UTC's (Pakistan is UTC+5).
 function localToday() {
@@ -41,6 +41,8 @@ const str = (v: string | number | null | undefined) => (v === null || v === unde
 
 export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string; name: string }[] }) {
   const router = useRouter();
+  const t = useT();
+  const msg = useMsg();
   const [flockId, setFlockId] = useState(flocks[0]?.id ?? "");
   const [date, setDate] = useState(localToday);
   // Server values for the current (flock, date), keyed so "loading" is derived instead of set in an effect.
@@ -92,14 +94,14 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
       if (res.status === 401) return router.replace("/farmer/login");
       if (!res.ok) {
         setFieldErrors(data.fieldErrors ?? {});
-        setMessage({ kind: "err", text: data.error ?? "Could not save. Please try again." });
+        setMessage({ kind: "err", text: data.error ? msg(data.error) : t("entry.saveFail") });
         return;
       }
       setLoaded({ key, entry: data.entry, exists: true });
       setEdits(null);
-      setMessage({ kind: "ok", text: mode === "daily" ? "Entry saved." : "Parameters saved." });
+      setMessage({ kind: "ok", text: mode === "daily" ? t("entry.savedEntry") : t("entry.savedParams") });
     } catch {
-      setMessage({ kind: "err", text: "Network error. Please try again." });
+      setMessage({ kind: "err", text: t("common.networkError") });
     } finally {
       setSaving(false);
     }
@@ -108,7 +110,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
   if (flocks.length === 0) {
     return (
       <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">
-        Add a flock first, then you can record daily data.
+        {t("entry.addFlockFirst")}
       </p>
     );
   }
@@ -119,7 +121,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
     <form onSubmit={onSubmit} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-semibold text-black/60">
-          Flock
+          {t("common.flock")}
           <select value={flockId} onChange={(e) => { setFlockId(e.target.value); setMessage(null); }} className={`${input} mt-1`}>
             {flocks.map((f) => (
               <option key={f.id} value={f.id}>{f.name}</option>
@@ -127,23 +129,24 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
           </select>
         </label>
         <label className="text-xs font-semibold text-black/60">
-          Date
+          {t("common.date")}
           <input type="date" value={date} max={localToday()} onChange={(e) => { setDate(e.target.value); setMessage(null); }} className={`${input} mt-1`} />
         </label>
       </div>
 
-      <p className="mt-3 h-4 text-[11px] text-black/40">
-        {loading ? "Loading…" : loaded?.exists ? "Showing what you saved earlier for this day. Saving updates it." : "Nothing saved yet for this day."}
+      <p className="mt-3 min-h-4 text-[11px] text-black/40">
+        {loading ? t("common.loading") : loaded?.exists ? t("entry.existing") : t("entry.none")}
       </p>
 
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
         {fields.map((f) => {
           const err = fieldErrors[f.name]?.[0];
+          const unit = f.unitKey ? t(f.unitKey) : f.unitText;
           const common = { name: f.name, value: valueOf(f), disabled: loading, className: `${input} mt-1` };
           return (
             <label key={f.name} className={`text-xs font-semibold text-black/60 ${f.kind === "textarea" ? "sm:col-span-2" : ""}`}>
-              {f.label}
-              {f.unit && <span className="ml-1 font-normal text-black/40">({f.unit})</span>}
+              {t(f.labelKey)}
+              {unit && <span className="ms-1 font-normal text-black/40">({unit})</span>}
               {f.kind === "number" && (
                 <input {...common} type="number" inputMode="decimal" step={f.step} min={0} required={f.required} onChange={(e) => setValue(f.name, e.target.value)} />
               )}
@@ -151,13 +154,13 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
               {f.kind === "textarea" && <textarea {...common} rows={3} maxLength={1000} onChange={(e) => setValue(f.name, e.target.value)} />}
               {f.kind === "select" && (
                 <select {...common} onChange={(e) => setValue(f.name, e.target.value)}>
-                  <option value="">Select…</option>
+                  <option value="">{t("common.select")}</option>
                   {f.options!.map((o) => (
-                    <option key={o} value={o}>{VENT_LABEL[o]}</option>
+                    <option key={o} value={o}>{t(`vent.${o}` as I18nKey)}</option>
                   ))}
                 </select>
               )}
-              {err && <p className="mt-1 text-xs font-normal text-red-600">{err}</p>}
+              {err && <p className="mt-1 text-xs font-normal text-red-600">{msg(err)}</p>}
             </label>
           );
         })}
@@ -170,7 +173,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
       )}
 
       <button type="submit" disabled={saving || loading} className="mt-4 rounded-xl bg-brand-green-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-        {saving ? "Saving…" : SAVE_LABEL[mode]}
+        {saving ? t("common.saving") : mode === "daily" ? t("entry.saveEntry") : t("entry.saveParams")}
       </button>
     </form>
   );

@@ -6,24 +6,29 @@ import { FarmerAuthShell } from "@/components/auth/AuthShell";
 import { FarmerLoginForm } from "@/components/auth/FarmerLoginForm";
 import { currentFarmer } from "@/lib/auth/dal";
 import { ADMIN_LOGIN, FARMER_HOME, FARMER_SIGNUP } from "@/lib/auth/paths";
+import { getT } from "@/lib/i18n";
+import { getRequestLang } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Farmer login — Dr. Hen" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: getT(await getRequestLang())("title.farmerLogin") };
+}
 
 export default async function FarmerLoginPage() {
   // The DB-verified lookup, not the raw cookie: a signed-but-revoked cookie would
   // otherwise bounce login -> dashboard -> login forever.
   if (await currentFarmer()) redirect(FARMER_HOME);
+  const t = getT(await getRequestLang());
 
   return (
     <FarmerAuthShell
-      title="Welcome Back, Farmer!"
-      subtitle="Login to get expert poultry guidance with Dr. Hen"
+      title={t("auth.loginTitle")}
+      subtitle={t("auth.loginSub")}
       footer={
         <>
           <p>
-            Don&apos;t have an account?{" "}
+            {t("auth.noAccount")}{" "}
             <Link href={FARMER_SIGNUP} className="font-semibold text-brand-green-dark hover:underline">
-              Sign Up
+              {t("auth.signUp")}
             </Link>
           </p>
           <p>
@@ -32,7 +37,7 @@ export default async function FarmerLoginPage() {
               className="inline-flex items-center gap-1.5 text-xs text-black/45 hover:text-black/70"
             >
               <Settings className="h-3.5 w-3.5" aria-hidden />
-              Admin Login
+              {t("auth.adminLogin")}
             </Link>
           </p>
         </>

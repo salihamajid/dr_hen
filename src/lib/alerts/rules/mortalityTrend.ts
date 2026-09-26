@@ -1,4 +1,5 @@
 import { THRESHOLDS } from "../thresholds";
+import { both } from "../messages";
 import type { Rule } from "../types";
 import { dailyMortality, iso } from "./mortality";
 
@@ -21,15 +22,17 @@ export const mortalityTrend: Rule = {
     if (!consecutive || !rising || !recent || latest.percent <= minPercent) return [];
 
     const series = last.map((d) => `${round2(d.percent)}%`).join(" → ");
+    const title = both("alertmsg.trendTitle", () => ({ days, flock: ctx.flock.name }));
+    const body = both("alertmsg.trendBody", () => ({ flock: ctx.flock.name, series }));
     return [
       {
         code: "MORTALITY_TREND",
         severity: "INFO",
         dateKey: iso(latest.date),
-        titleEn: `Mortality rising for ${days} days in ${ctx.flock.name}`,
-        bodyEn:
-          `Daily mortality in ${ctx.flock.name} has risen each day (${series}). No single day is at the alert level yet, ` +
-          `but it is worth checking water, feed, temperature and the birds' behaviour today.`,
+        titleEn: title.en,
+        titleUr: title.ur,
+        bodyEn: body.en,
+        bodyUr: body.ur,
         metrics: { latestPercent: round2(latest.percent), series },
       },
     ];

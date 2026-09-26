@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Bird } from "lucide-react";
 import { AddFlockForm } from "@/components/farmer/AddFlockForm";
 import { requireFarmer } from "@/lib/auth/dal";
 import { flockAgeWeeks } from "@/lib/flocks";
 import { getT } from "@/lib/i18n";
+import { localizedTitle } from "@/lib/i18n/metadata";
 import { prisma } from "@/lib/prisma";
 
-export const metadata: Metadata = { title: "My Flocks — Dr. Hen" };
+export const generateMetadata = () => localizedTitle("title.flocks");
 export const dynamic = "force-dynamic";
 
 export default async function FarmerFlocksPage() {

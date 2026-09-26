@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
   }
 
   recordAttempt(limitKey);
-  const text = reportToText(loaded.report, farmer.name);
+  // The message goes out in the farmer's own language (screens and WhatsApp text; the PDF stays English).
+  const text = reportToText(loaded.report, farmer.name, auth.language ?? "EN");
   try {
     const result = await whatsapp.sendText(farmer.whatsappNumber, text);
     await prisma.message.create({

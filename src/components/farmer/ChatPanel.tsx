@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Send, X } from "lucide-react";
 import { MessageBubble } from "@/components/messages/MessageBubble";
+import { useMsg, useT } from "./I18nProvider";
 
 type Msg = Parameters<typeof MessageBubble>[0]["message"];
 
@@ -21,12 +22,21 @@ async function downscale(file: File, maxSide = 1280): Promise<string> {
 
 export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
   const router = useRouter();
+  const t = useT();
+  const msg = useMsg();
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const senderLabels = {
+    FARMER: t("sender.FARMER"),
+    AI_AGENT: t("sender.AI_AGENT"),
+    ADMIN: t("sender.ADMIN"),
+    FIELD_VET: t("sender.FIELD_VET"),
+  };
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -40,7 +50,7 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
       setImage(await downscale(file));
       setError(null);
     } catch {
-      setError("Could not read that photo. Please try another one.");
+      setError(t("chat.photoReadFail"));
     }
   }
 
@@ -59,12 +69,12 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
         router.replace("/farmer/login");
         return;
       }
-      if (!res.ok) throw new Error(data?.error ?? "Could not send. Please try again.");
+      if (!res.ok) throw new Error(data?.error ? msg(data.error) : t("chat.sendFail"));
       setMessages(data.messages);
       setText("");
       setImage(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send. Please try again.");
+      setError(err instanceof Error ? err.message : t("chat.sendFail"));
     } finally {
       setSending(false);
     }
@@ -74,26 +84,22 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
     <div className="flex flex-col gap-3">
       <div className="max-h-[60vh] min-h-[16rem] space-y-3 overflow-y-auto rounded-2xl bg-black/[0.02] p-4">
         {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
+          <MessageBubble key={m.id} message={m} senderLabels={senderLabels} />
         ))}
-        {messages.length === 0 && (
-          <p className="py-10 text-center text-sm text-black/40">
-            Describe your birds&apos; symptoms or send a photo. Dr. Hen will help.
-          </p>
-        )}
-        {sending && <p className="text-xs italic text-black/40">Dr. Hen is thinking…</p>}
+        {messages.length === 0 && <p className="py-10 text-center text-sm text-black/40">{t("chat.empty")}</p>}
+        {sending && <p className="text-xs italic text-black/40">{t("chat.thinking")}</p>}
         <div ref={endRef} />
       </div>
 
       {image && (
         <div className="relative w-fit">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="Photo to send" className="max-h-28 rounded-lg" />
+          <img src={image} alt={t("chat.photoAlt")} className="max-h-28 rounded-lg" />
           <button
             type="button"
             onClick={() => setImage(null)}
-            className="absolute -right-2 -top-2 rounded-full bg-black/70 p-1 text-white"
-            aria-label="Remove photo"
+            className="absolute -end-2 -top-2 rounded-full bg-black/70 p-1 text-white"
+            aria-label={t("chat.remove")}
           >
             <X className="h-3 w-3" />
           </button>
@@ -103,7 +109,7 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
       {error && <p className="text-xs text-red-600">{error}</p>}
 
       <div className="flex items-end gap-2">
-        <label className="cursor-pointer rounded-xl bg-white p-3 text-black/55 shadow-sm ring-1 ring-black/5 hover:bg-black/5" aria-label="Attach photo">
+        <label className="cursor-pointer rounded-xl bg-white p-3 text-black/55 shadow-sm ring-1 ring-black/5 hover:bg-black/5" aria-label={t("chat.attach")}>
           <ImagePlus className="h-5 w-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} className="hidden" />
         </label>
@@ -116,7 +122,7 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
               void send();
             }
           }}
-          placeholder="Type your message (Urdu, Punjabi or English)…"
+          placeholder={t("chat.placeholder")}
           rows={2}
           maxLength={2000}
           className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-brand-green"
@@ -127,10 +133,10 @@ export function ChatPanel({ initialMessages }: { initialMessages: Msg[] }) {
           disabled={sending || (!text.trim() && !image)}
           className="flex items-center gap-1.5 rounded-xl bg-brand-red px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
-          <Send className="h-4 w-4" /> Send
+          <Send className="h-4 w-4 rtl:-scale-x-100" /> {t("chat.send")}
         </button>
       </div>
-      <p className="text-[11px] text-black/40">Type VET to reach our Field Vet team directly.</p>
+      <p className="text-[11px] text-black/40">{t("chat.vetHint")}</p>
     </div>
   );
 }

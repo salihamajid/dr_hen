@@ -2,6 +2,7 @@
 
 import { useId, useState, type ComponentProps } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useT } from "@/components/farmer/I18nProvider";
 
 const INPUT =
   "w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm outline-none transition-colors placeholder:text-black/35 focus:border-brand-green focus:ring-2 focus:ring-brand-green/15 aria-[invalid=true]:border-brand-red";
@@ -43,6 +44,7 @@ export function Field({ name, label, error, hint, className = "", ...input }: Fi
 
 export function PasswordField({ name, label, error, hint, ...input }: FieldProps) {
   const id = useId();
+  const t = useT();
   const [visible, setVisible] = useState(false);
   return (
     <div>
@@ -56,14 +58,14 @@ export function PasswordField({ name, label, error, hint, ...input }: FieldProps
           type={visible ? "text" : "password"}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-          className={`${INPUT} pr-11`}
+          className={`${INPUT} pe-11`}
           {...input}
         />
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Hide password" : "Show password"}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black/70"
+          aria-label={visible ? t("common.hidePassword") : t("common.showPassword")}
+          className="absolute end-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black/70"
         >
           {visible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
         </button>
@@ -82,13 +84,14 @@ export function PasswordField({ name, label, error, hint, ...input }: FieldProps
 }
 
 export function SubmitButton({ pending, children }: { pending: boolean; children: React.ReactNode }) {
+  const t = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="w-full rounded-xl bg-brand-green-dark px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "Please wait…" : children}
+      {pending ? t("common.pleaseWait") : children}
     </button>
   );
 }

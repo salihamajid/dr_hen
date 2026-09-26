@@ -34,7 +34,9 @@ export interface AlertCandidate {
   /** YYYY-MM-DD the alert is about. With flock + code it makes the dedupe key, so re-evaluating never duplicates. */
   dateKey: string;
   titleEn: string;
+  titleUr: string;
   bodyEn: string;
+  bodyUr: string;
   metrics: Record<string, number | string | null>;
 }
 

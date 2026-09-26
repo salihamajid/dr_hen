@@ -16,7 +16,7 @@ const SENDER_LABEL: Record<MessageLike["senderType"], string> = {
   FIELD_VET: "Field Vet",
 };
 
-export function MessageBubble({ message }: { message: MessageLike }) {
+export function MessageBubble({ message, senderLabels }: { message: MessageLike; senderLabels?: Partial<Record<MessageLike["senderType"], string>> }) {
   const isInbound = message.direction === "INBOUND";
   const isImageData = message.mediaUrl?.startsWith("data:image");
 
@@ -28,7 +28,7 @@ export function MessageBubble({ message }: { message: MessageLike }) {
         }`}
       >
         <div className={`mb-1 text-[10px] font-semibold uppercase tracking-wide ${isInbound ? "text-black/40" : "text-white/70"}`}>
-          {SENDER_LABEL[message.senderType]}
+          {senderLabels?.[message.senderType] ?? SENDER_LABEL[message.senderType]}
           {message.detectedLanguage && ` · ${message.detectedLanguage.toUpperCase()}`}
         </div>
 
@@ -43,7 +43,7 @@ export function MessageBubble({ message }: { message: MessageLike }) {
 
         <p className="whitespace-pre-wrap">{message.textContent}</p>
 
-        <div className={`mt-1 text-right text-[10px] ${isInbound ? "text-black/30" : "text-white/60"}`}>
+        <div className={`mt-1 text-end text-[10px] ${isInbound ? "text-black/30" : "text-white/60"}`}>
           {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>

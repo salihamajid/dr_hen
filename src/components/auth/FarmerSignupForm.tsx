@@ -1,11 +1,13 @@
 "use client";
 
+import { useT } from "@/components/farmer/I18nProvider";
 import { Field, FormError, PasswordField, SubmitButton } from "./Field";
 import { useAuthForm } from "./useAuthForm";
 
 const BREEDS = ["Broiler", "Layer", "Desi/Local"];
 
 export function FarmerSignupForm() {
+  const t = useT();
   const { pending, error, fieldErrors, onSubmit } = useAuthForm("/api/auth/farmer-signup", (form) => ({
     name: form.get("name"),
     phone: form.get("phone"),
@@ -21,31 +23,33 @@ export function FarmerSignupForm() {
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <FormError message={error} />
 
-      <Field name="name" label="Your name" autoComplete="name" required error={fieldErrors.name?.[0]} />
+      <Field name="name" label={t("auth.name")} autoComplete="name" required error={fieldErrors.name?.[0]} />
       <Field
         name="phone"
-        label="Phone number"
+        label={t("auth.phone")}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
         placeholder="0300 1234567"
-        hint="This is also your WhatsApp number and your login."
+        dir="ltr"
+        hint={t("auth.phoneHint")}
         required
         error={fieldErrors.phone?.[0]}
       />
       <PasswordField
         name="password"
-        label="Password"
+        label={t("auth.password")}
         autoComplete="new-password"
-        hint="At least 8 characters."
+        dir="ltr"
+        hint={t("auth.passwordHint")}
         required
         error={fieldErrors.password?.[0]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="location" label="Location" placeholder="City or village" required error={fieldErrors.location?.[0]} />
+        <Field name="location" label={t("auth.location")} placeholder={t("auth.locationPh")} required error={fieldErrors.location?.[0]} />
         <div>
-          <Field name="breed" label="Breed" list="signup-breeds" required error={fieldErrors.breed?.[0]} />
+          <Field name="breed" label={t("auth.breed")} list="signup-breeds" required error={fieldErrors.breed?.[0]} />
           <datalist id="signup-breeds">
             {BREEDS.map((b) => (
               <option key={b} value={b} />
@@ -57,7 +61,7 @@ export function FarmerSignupForm() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Field
           name="flockSize"
-          label="Birds"
+          label={t("auth.birds")}
           type="number"
           inputMode="numeric"
           min={1}
@@ -66,7 +70,7 @@ export function FarmerSignupForm() {
         />
         <Field
           name="numberOfSheds"
-          label="Sheds"
+          label={t("auth.sheds")}
           type="number"
           inputMode="numeric"
           min={1}
@@ -75,7 +79,7 @@ export function FarmerSignupForm() {
         />
         <Field
           name="flockAgeWeeks"
-          label="Flock age (weeks)"
+          label={t("auth.flockAge")}
           type="number"
           inputMode="numeric"
           min={0}
@@ -84,7 +88,7 @@ export function FarmerSignupForm() {
         />
       </div>
 
-      <SubmitButton pending={pending}>Create account →</SubmitButton>
+      <SubmitButton pending={pending}>{t("auth.createBtn")}</SubmitButton>
     </form>
   );
 }

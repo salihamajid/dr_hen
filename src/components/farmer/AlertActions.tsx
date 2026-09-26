@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "./I18nProvider";
 
 type Action = "acknowledge" | "resolve";
 
 export function AlertActions({ id, status }: { id: string; status: "OPEN" | "ACKNOWLEDGED" | "RESOLVED" }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,23 +26,23 @@ export function AlertActions({ id, status }: { id: string; status: "OPEN" | "ACK
       if (!res.ok) throw new Error();
       router.refresh();
     } catch {
-      setError("Could not update. Please try again.");
+      setError(t("alerts.updateFail"));
     } finally {
       setBusy(null);
     }
   }
 
-  if (status === "RESOLVED") return <p className="text-xs text-black/45">Resolved</p>;
+  if (status === "RESOLVED") return <p className="text-xs text-black/45">{t("alerts.resolvedLabel")}</p>;
   const btn = "rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60";
   return (
     <div className="flex flex-wrap items-center gap-2">
       {status === "OPEN" && (
         <button type="button" onClick={() => run("acknowledge")} disabled={!!busy} className={`${btn} border border-brand-green-dark text-brand-green-dark hover:bg-brand-green-dark hover:text-white`}>
-          {busy === "acknowledge" ? "Saving…" : "Acknowledge"}
+          {busy === "acknowledge" ? t("common.saving") : t("alerts.acknowledge")}
         </button>
       )}
       <button type="button" onClick={() => run("resolve")} disabled={!!busy} className={`${btn} bg-brand-green-dark text-white`}>
-        {busy === "resolve" ? "Saving…" : "Mark resolved"}
+        {busy === "resolve" ? t("common.saving") : t("alerts.resolve")}
       </button>
       {error && <span className="text-xs text-red-600">{error}</span>}
     </div>

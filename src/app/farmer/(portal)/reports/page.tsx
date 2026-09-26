@@ -1,23 +1,25 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, FileBarChart, TrendingUp, Skull } from "lucide-react";
 import { requireFarmer } from "@/lib/auth/dal";
+import { getT, type I18nKey } from "@/lib/i18n";
+import { localizedTitle } from "@/lib/i18n/metadata";
 
-export const metadata: Metadata = { title: "Reports — Dr. Hen" };
+export const generateMetadata = () => localizedTitle("title.reports");
 
-const CARDS = [
-  { href: "/farmer/reports/mortality", title: "Shift Report: Daily Mortality", body: "Losses over a date range, with a daily chart.", icon: Skull, cta: "View report" },
-  { href: "/farmer/reports/growth", title: "Chicks Report: Growth", body: "Actual weight against the expected target.", icon: TrendingUp, cta: "View report" },
-  { href: "/farmer/reports/daily", title: "Daily Report", body: "Everything you recorded for one day, in one place.", icon: CalendarDays, cta: "Generate report" },
+const CARDS: { href: string; title: I18nKey; body: I18nKey; icon: typeof Skull; cta: I18nKey }[] = [
+  { href: "/farmer/reports/mortality", title: "reports.cardMort", body: "reports.cardMortBody", icon: Skull, cta: "reports.viewReport" },
+  { href: "/farmer/reports/growth", title: "reports.cardGrowth", body: "reports.cardGrowthBody", icon: TrendingUp, cta: "reports.viewReport" },
+  { href: "/farmer/reports/daily", title: "reports.cardDaily", body: "reports.cardDailyBody", icon: CalendarDays, cta: "reports.generateLink" },
 ];
 
 export default async function ReportsHubPage() {
-  await requireFarmer();
+  const { language } = await requireFarmer();
+  const t = getT(language);
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
       <div className="flex items-center gap-2">
         <FileBarChart className="h-5 w-5 text-brand-green" aria-hidden />
-        <h1 className="text-xl font-bold">Reports</h1>
+        <h1 className="text-xl font-bold">{t("reports.title")}</h1>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {CARDS.map(({ href, title, body, icon: Icon, cta }) => (
@@ -26,10 +28,10 @@ export default async function ReportsHubPage() {
               <Icon className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-base font-bold leading-tight">{title}</h2>
-              <p className="mt-1 text-xs text-black/50">{body}</p>
+              <h2 className="text-base font-bold leading-tight">{t(title)}</h2>
+              <p className="mt-1 text-xs text-black/50">{t(body)}</p>
             </div>
-            <span className="mt-auto text-sm font-semibold text-brand-green-dark">{cta} →</span>
+            <span className="mt-auto text-sm font-semibold text-brand-green-dark">{t(cta)}</span>
           </Link>
         ))}
       </div>

@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { LanguagePicker } from "@/components/farmer/LanguagePicker";
 import { requireFarmer } from "@/lib/auth/dal";
 import { getT } from "@/lib/i18n";
+import { localizedTitle } from "@/lib/i18n/metadata";
 
-export const metadata: Metadata = { title: "Settings — Dr. Hen" };
+export const generateMetadata = () => localizedTitle("title.settings");
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {

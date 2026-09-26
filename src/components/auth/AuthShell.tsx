@@ -1,15 +1,18 @@
 import Image from "next/image";
 import { Camera, Stethoscope, Users } from "lucide-react";
+import { getT } from "@/lib/i18n";
+import { getRequestLang } from "@/lib/i18n/server";
+import { LanguageSwitch } from "./LanguageSwitch";
 
-function Brand() {
+function Brand({ name = "Dr. Hen", tagline = "AI Care for Healthier Flocks" }: { name?: string; tagline?: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white ring-2 ring-brand-green/20">
-        <Image src="/images/dr-hen-v2.jpeg" alt="Dr. Hen" fill sizes="64px" className="object-cover object-top" priority />
+        <Image src="/images/dr-hen-v2.jpeg" alt={name} fill sizes="64px" className="object-cover object-top" priority />
       </div>
       <div className="text-center">
-        <div className="text-2xl font-extrabold leading-none text-brand-green-dark">Dr. Hen</div>
-        <div className="mt-1 text-[11px] font-medium text-black/45">AI Care for Healthier Flocks</div>
+        <div className="text-2xl font-extrabold leading-none text-brand-green-dark">{name}</div>
+        <div className="mt-1 text-[11px] font-medium text-black/45">{tagline}</div>
       </div>
     </div>
   );
@@ -22,11 +25,12 @@ interface ShellProps {
   footer: React.ReactNode;
 }
 
-function Card({ title, subtitle, children, footer }: ShellProps) {
+function Card({ title, subtitle, children, footer, brandName, tagline, top }: ShellProps & { brandName?: string; tagline?: string; top?: React.ReactNode }) {
   return (
     <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm ring-1 ring-black/5 sm:p-9">
+      {top && <div className="mb-4 flex justify-end">{top}</div>}
       <div className="mb-6 flex flex-col items-center text-center">
-        <Brand />
+        <Brand name={brandName} tagline={tagline} />
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">{title}</h1>
         <p className="mt-1 text-sm text-black/50">{subtitle}</p>
       </div>
@@ -46,17 +50,19 @@ export function AdminAuthShell(props: ShellProps) {
 }
 
 const FEATURES = [
-  { icon: Camera, title: "Quick & Accurate Disease Detection", body: "From photo, voice note or text" },
-  { icon: Stethoscope, title: "Trusted Guidance", body: "Get instant treatment and prevention advice" },
-  { icon: Users, title: "Healthier Flocks", body: "For better growth and higher productivity" },
-];
+  { icon: Camera, title: "auth.f1", body: "auth.f1b" },
+  { icon: Stethoscope, title: "auth.f2", body: "auth.f2b" },
+  { icon: Users, title: "auth.f3", body: "auth.f3b" },
+] as const;
 
-/** Farmer login / sign-up: form card beside the promotional panel, as in the reference. */
-export function FarmerAuthShell(props: ShellProps) {
+/** Farmer login / sign-up: form card beside the promotional panel, in the visitor's language. */
+export async function FarmerAuthShell(props: ShellProps) {
+  const t = getT(await getRequestLang());
+
   return (
     <main className="grid min-h-screen w-full bg-background lg:grid-cols-[minmax(0,540px)_1fr]">
       <div className="flex items-center justify-center px-5 py-10">
-        <Card {...props} />
+        <Card {...props} brandName={t("brand.name")} tagline={t("auth.tagline")} top={<LanguageSwitch />} />
       </div>
 
       <aside className="relative hidden overflow-hidden bg-gradient-to-br from-brand-green-dark via-brand-green to-[#2d9d63] p-14 text-white lg:flex lg:flex-col lg:justify-center">
@@ -65,13 +71,11 @@ export function FarmerAuthShell(props: ShellProps) {
 
         <div className="relative max-w-lg">
           <h2 className="text-4xl font-extrabold leading-tight">
-            Your AI Poultry Doctor –<br />
-            <span className="text-[#b6f0c9]">Dr. Hen</span>
+            {t("auth.promoHead")}
+            <br />
+            <span className="text-[#b6f0c9]">{t("brand.name")}</span>
           </h2>
-          <p className="mt-4 text-base text-white/80">
-            Pakistan&apos;s first AI doctor for poultry that diagnoses hen diseases from a photo, voice note or text
-            in 30 seconds.
-          </p>
+          <p className="mt-4 text-base text-white/80">{t("auth.promoBody")}</p>
 
           <ul className="mt-10 space-y-6">
             {FEATURES.map(({ icon: Icon, title, body }) => (
@@ -80,8 +84,8 @@ export function FarmerAuthShell(props: ShellProps) {
                   <Icon className="h-6 w-6" aria-hidden />
                 </span>
                 <div>
-                  <div className="font-bold">{title}</div>
-                  <div className="text-sm text-white/75">{body}</div>
+                  <div className="font-bold">{t(title)}</div>
+                  <div className="text-sm text-white/75">{t(body)}</div>
                 </div>
               </li>
             ))}

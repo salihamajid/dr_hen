@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useMsg } from "@/components/farmer/I18nProvider";
 
 interface ApiResult {
   ok: boolean;
@@ -35,6 +36,7 @@ function safePath(path: string): string {
  * it stored from a prefetch made while logged out.
  */
 export function useAuthForm(endpoint: string, toBody: (form: FormData) => unknown) {
+  const msg = useMsg();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
@@ -54,8 +56,11 @@ export function useAuthForm(endpoint: string, toBody: (form: FormData) => unknow
       return;
     }
 
-    setError(result.error ?? "Something went wrong. Please try again.");
-    setFieldErrors(result.fieldErrors ?? {});
+    // The API answers in English; show it in the language the visitor picked.
+    setError(msg(result.error ?? "Something went wrong. Please try again."));
+    setFieldErrors(
+      Object.fromEntries(Object.entries(result.fieldErrors ?? {}).map(([k, v]) => [k, v?.map((m) => msg(m))])) as Record<string, string[] | undefined>
+    );
     setPending(false);
   }
 

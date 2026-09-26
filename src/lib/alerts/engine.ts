@@ -70,8 +70,8 @@ async function store(farmerId: string, flockId: string, c: AlertCandidate): Prom
   const key = dedupeKey(farmerId, flockId, c);
   const existing = await prisma.alert.findUnique({ where: { dedupeKey: key }, select: { id: true, severity: true, status: true } });
 
-  // Urdu wording stays identical to English until reviewed Urdu copy is supplied.
-  const text = { titleEn: c.titleEn, titleUr: c.titleEn, bodyEn: c.bodyEn, bodyUr: c.bodyEn, metrics: c.metrics as Prisma.InputJsonValue };
+  // Both languages are stored now, so the alert reads correctly whichever language the farmer uses.
+  const text = { titleEn: c.titleEn, titleUr: c.titleUr, bodyEn: c.bodyEn, bodyUr: c.bodyUr, metrics: c.metrics as Prisma.InputJsonValue };
 
   if (existing) {
     if (existing.status !== "RESOLVED" && SEVERITY_RANK[c.severity] > SEVERITY_RANK[existing.severity]) {

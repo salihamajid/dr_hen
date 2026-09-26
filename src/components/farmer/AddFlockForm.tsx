@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
+import { useMsg, useT } from "./I18nProvider";
 
 const BREEDS = ["Broiler", "Layer", "Desi", "Cobb 500", "Ross 308", "Hubbard"];
 
 export function AddFlockForm() {
   const router = useRouter();
+  const t = useT();
+  const msg = useMsg();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +41,13 @@ export function AddFlockForm() {
       }
       if (!res.ok) {
         setFieldErrors(data.fieldErrors ?? {});
-        setError(data.error ?? "Could not add the flock. Please try again.");
+        setError(data.error ? msg(data.error) : t("flocks.addFail"));
         return;
       }
       setOpen(false);
       router.refresh();
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("common.networkError"));
     } finally {
       setPending(false);
     }
@@ -57,32 +60,32 @@ export function AddFlockForm() {
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 rounded-xl bg-brand-red px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
       >
-        <Plus className="h-4 w-4" aria-hidden /> Add New Flock
+        <Plus className="h-4 w-4" aria-hidden /> {t("flocks.add")}
       </button>
     );
   }
 
   const input = "w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-brand-green";
-  const err = (k: string) => fieldErrors[k]?.[0] && <p className="mt-1 text-xs text-red-600">{fieldErrors[k]![0]}</p>;
+  const err = (k: string) => fieldErrors[k]?.[0] && <p className="mt-1 text-xs text-red-600">{msg(fieldErrors[k]![0])}</p>;
 
   return (
     <form onSubmit={onSubmit} className="w-full rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-bold">Add New Flock</h2>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-black/5" aria-label="Cancel">
+        <h2 className="text-base font-bold">{t("flocks.add")}</h2>
+        <button type="button" onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-black/5" aria-label={t("common.cancel")}>
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-semibold text-black/60">
-          Flock name
-          <input name="name" required maxLength={60} placeholder="e.g. Flock 2" className={`${input} mt-1`} />
+          {t("flocks.name")}
+          <input name="name" required maxLength={60} placeholder={t("flocks.namePh")} className={`${input} mt-1`} />
           {err("name")}
         </label>
         <label className="text-xs font-semibold text-black/60">
-          Breed / type
-          <input name="breed" required maxLength={50} list="flock-breeds" placeholder="e.g. Broiler" className={`${input} mt-1`} />
+          {t("flocks.breed")}
+          <input name="breed" required maxLength={50} list="flock-breeds" placeholder={t("flocks.breedPh")} className={`${input} mt-1`} />
           <datalist id="flock-breeds">
             {BREEDS.map((b) => (
               <option key={b} value={b} />
@@ -91,12 +94,12 @@ export function AddFlockForm() {
           {err("breed")}
         </label>
         <label className="text-xs font-semibold text-black/60">
-          Number of birds
+          {t("flocks.count")}
           <input name="sizeCount" type="number" inputMode="numeric" min={1} max={5000000} required className={`${input} mt-1`} />
           {err("sizeCount")}
         </label>
         <label className="text-xs font-semibold text-black/60">
-          Age (weeks)
+          {t("flocks.ageWeeks")}
           <input name="ageWeeks" type="number" inputMode="numeric" min={0} max={200} required defaultValue={0} className={`${input} mt-1`} />
           {err("ageWeeks")}
         </label>
@@ -110,10 +113,10 @@ export function AddFlockForm() {
           disabled={pending}
           className="rounded-xl bg-brand-green-dark px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save flock"}
+          {pending ? t("common.saving") : t("flocks.save")}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-black/5">
-          Cancel
+          {t("common.cancel")}
         </button>
       </div>
     </form>

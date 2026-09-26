@@ -17,10 +17,10 @@ export function FarmerSidebar({ onNavigate, unreadAlerts = 0 }: { onNavigate?: (
     <div className="flex h-full flex-col overflow-hidden bg-sidebar-bg text-white">
       <div className="flex shrink-0 flex-col items-center gap-2 px-5 py-5">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-white">
-          <Image src="/images/dr-hen-v2.jpeg" alt="Dr. Hen" fill sizes="56px" className="object-cover object-top" priority />
+          <Image src="/images/dr-hen-v2.jpeg" alt={t("brand.name")} fill sizes="56px" className="object-cover object-top" priority />
         </div>
         <div className="text-center">
-          <div className="text-lg font-extrabold leading-tight">Dr. Hen</div>
+          <div className="text-lg font-extrabold leading-tight">{t("brand.name")}</div>
           <div className="text-[10px] font-semibold uppercase tracking-wide text-brand-red">{t("nav.brandTagline")}</div>
         </div>
       </div>
