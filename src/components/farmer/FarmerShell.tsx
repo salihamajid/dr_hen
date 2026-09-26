@@ -8,13 +8,13 @@ import { FarmerSidebar } from "./FarmerSidebar";
 // Separate from DashboardShell on purpose: the admin shell carries admin-only
 // search, notifications and nav, and one parameterised component would leave
 // admin pieces a single prop away from a farmer screen.
-export function FarmerShell({ children, farmerName }: { children: React.ReactNode; farmerName: string }) {
+export function FarmerShell({ children, farmerName, unreadAlerts }: { children: React.ReactNode; farmerName: string; unreadAlerts: number }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex h-full">
       <aside className="hidden w-60 shrink-0 md:block">
-        <FarmerSidebar />
+        <FarmerSidebar unreadAlerts={unreadAlerts} />
       </aside>
 
       {mobileOpen && (
@@ -29,7 +29,7 @@ export function FarmerShell({ children, farmerName }: { children: React.ReactNod
               >
                 <X className="h-4 w-4" />
               </button>
-              <FarmerSidebar onNavigate={() => setMobileOpen(false)} />
+              <FarmerSidebar onNavigate={() => setMobileOpen(false)} unreadAlerts={unreadAlerts} />
             </div>
           </div>
         </div>

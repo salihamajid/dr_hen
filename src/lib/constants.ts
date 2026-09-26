@@ -18,6 +18,7 @@ export const FARMER_NAV_ITEMS = [
   { href: "/farmer/daily-entry", label: "Daily Entry", icon: "ClipboardList" },
   { href: "/farmer/attributes", label: "Attributes", icon: "SlidersHorizontal" },
   { href: "/farmer/reports", label: "Reports", icon: "FileBarChart" },
+  { href: "/farmer/alerts", label: "Alerts", icon: "Bell" },
   { href: "/farmer/assistant", label: "AI Assistant", icon: "Bot" },
 ] as const;
 

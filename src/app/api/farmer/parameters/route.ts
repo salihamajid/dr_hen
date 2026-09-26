@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireFarmerApi } from "@/lib/auth/dal";
 import { jsonError, parseJsonBody } from "@/lib/auth/http";
+import { evaluateAfterSave } from "@/lib/alerts/engine";
 import { saveDailyReport, toEntryView } from "@/lib/reports/saveDailyReport";
 import { parametersSchema } from "@/lib/validators/dailyReport";
 
@@ -16,5 +17,6 @@ export async function POST(req: NextRequest) {
 
   const result = await saveDailyReport(auth.farmerId, { flockId, date }, { feedKg, waterLiters, temperatureC, humidityPct, lightHours, ventilation });
   if (!result.ok) return jsonError(result.status, result.error);
+  await evaluateAfterSave(auth.farmerId, flockId);
   return NextResponse.json({ entry: toEntryView(result.report) });
 }

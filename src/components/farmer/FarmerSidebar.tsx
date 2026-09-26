@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bird, Bot, ClipboardList, FileBarChart, LayoutDashboard, SlidersHorizontal } from "lucide-react";
+import { Bell, Bird, Bot, ClipboardList, FileBarChart, LayoutDashboard, SlidersHorizontal } from "lucide-react";
 import { FARMER_NAV_ITEMS } from "@/lib/constants";
 
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = { LayoutDashboard, Bird, Bot, ClipboardList, FileBarChart, SlidersHorizontal };
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = { LayoutDashboard, Bell, Bird, Bot, ClipboardList, FileBarChart, SlidersHorizontal };
 
-export function FarmerSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function FarmerSidebar({ onNavigate, unreadAlerts = 0 }: { onNavigate?: () => void; unreadAlerts?: number }) {
   const pathname = usePathname();
 
   return (
@@ -39,6 +39,11 @@ export function FarmerSidebar({ onNavigate }: { onNavigate?: () => void }) {
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />
               {item.label}
+              {item.href === "/farmer/alerts" && unreadAlerts > 0 && (
+                <span className="ml-auto rounded-full bg-brand-red px-2 py-0.5 text-[10px] font-bold text-white" aria-label={`${unreadAlerts} unread alerts`}>
+                  {unreadAlerts > 99 ? "99+" : unreadAlerts}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireFarmerApi } from "@/lib/auth/dal";
 import { jsonError, parseJsonBody } from "@/lib/auth/http";
+import { evaluateAfterSave } from "@/lib/alerts/engine";
 import { parseDateOnly } from "@/lib/reports/dates";
 import { saveDailyReport, toEntryView } from "@/lib/reports/saveDailyReport";
 import { dailyEntrySchema } from "@/lib/validators/dailyReport";
@@ -38,5 +39,6 @@ export async function POST(req: NextRequest) {
     { checkMortalityAgainstFlock: true }
   );
   if (!result.ok) return jsonError(result.status, result.error);
+  await evaluateAfterSave(auth.farmerId, flockId);
   return NextResponse.json({ entry: toEntryView(result.report) });
 }
