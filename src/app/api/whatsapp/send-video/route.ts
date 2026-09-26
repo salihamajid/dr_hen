@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { whatsapp } from "@/lib/whatsapp";
+import { isSessionWindowOpen } from "@/lib/whatsapp/sessionWindow";
 
 // Before a farmer has ever messaged Dr. Hen, there is no open WhatsApp
 // "customer service window", so the FIRST message to them must go through an
@@ -17,7 +18,6 @@ const INTRO_TEMPLATE_LANGUAGE = process.env.INTRO_VIDEO_TEMPLATE_LANGUAGE || "en
 const INTRO_VIDEO_URL = process.env.INTRO_VIDEO_URL;
 const INTRO_VIDEO_MEDIA_ID = process.env.INTRO_VIDEO_MEDIA_ID;
 const INTRO_CAPTION = "Hello, how is your chicken? Is it okay? Please send a picture, I will tell you.";
-const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   const { farmerId } = await req.json();
@@ -26,15 +26,8 @@ export async function POST(req: NextRequest) {
   const farmer = await prisma.farmer.findUnique({ where: { id: farmerId } });
   if (!farmer) return NextResponse.json({ error: "Farmer not found" }, { status: 404 });
 
-  // Simulated inbound messages (whatsappMessageId "sim.*", from the demo panel)
-  // never reached Meta, so they can't have opened a real session window there —
-  // only a genuine webhook-received message counts. In-app chat messages (channel
-  // IN_APP) never touch Meta either, so they're excluded explicitly.
-  const lastRealInbound = await prisma.message.findFirst({
-    where: { farmerId: farmer.id, channel: "WHATSAPP", direction: "INBOUND", NOT: { whatsappMessageId: { startsWith: "sim." } } },
-    orderBy: { createdAt: "desc" },
-  });
-  const windowOpen = !!lastRealInbound && Date.now() - lastRealInbound.createdAt.getTime() < CUSTOMER_SERVICE_WINDOW_MS;
+  // Shared with the farmer portal's report sharing: one definition of "is the 24h window open".
+  const windowOpen = await isSessionWindowOpen(farmer.id);
 
   if (!windowOpen && process.env.WHATSAPP_PROVIDER === "meta") {
     if (!INTRO_TEMPLATE_NAME) {

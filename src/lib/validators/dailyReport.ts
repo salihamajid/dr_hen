@@ -27,6 +27,7 @@ export const dailyEntrySchema = z.object({
   ...shared,
   // Required. A blank box must fail, not quietly coerce to 0 deaths.
   mortalityCount: z.preprocess(blankToUndefined, z.coerce.number({ error: "Mortality: enter a number" }).int("Mortality: whole birds only").min(0).max(5_000_000)),
+  avgWeightGrams: num("Average weight", 1, 10_000),
   // What the farmer says they gave. A record only: it never reaches the AI or the medicine guardrail.
   medicineGiven: text(200),
   notes: text(1000),

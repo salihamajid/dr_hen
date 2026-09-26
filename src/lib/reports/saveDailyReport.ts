@@ -47,6 +47,7 @@ export function toEntryView(r: DailyReport | null) {
     waterLiters: r?.waterLiters ?? null,
     temperatureC: r?.temperatureC ?? null,
     mortalityCount: r ? r.mortalityCount : null,
+    avgWeightGrams: r?.avgWeightGrams ?? null,
     medicineGiven: r?.medicineGiven ?? null,
     notes: r?.notes ?? null,
     humidityPct: r?.humidityPct ?? null,

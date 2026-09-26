@@ -29,12 +29,12 @@ export async function POST(req: NextRequest) {
 
   const body = await parseJsonBody(req, dailyEntrySchema);
   if (!body.ok) return body.response;
-  const { flockId, date, feedKg, waterLiters, temperatureC, mortalityCount, medicineGiven, notes } = body.data;
+  const { flockId, date, feedKg, waterLiters, temperatureC, mortalityCount, avgWeightGrams, medicineGiven, notes } = body.data;
 
   const result = await saveDailyReport(
     auth.farmerId,
     { flockId, date },
-    { feedKg, waterLiters, temperatureC, mortalityCount, medicineGiven, notes },
+    { feedKg, waterLiters, temperatureC, mortalityCount, avgWeightGrams, medicineGiven, notes },
     { checkMortalityAgainstFlock: true }
   );
   if (!result.ok) return jsonError(result.status, result.error);

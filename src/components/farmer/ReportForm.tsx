@@ -12,6 +12,7 @@ const FIELDS: Record<Mode, Field[]> = {
     { name: "feedKg", label: "Feed used", kind: "number", step: "0.1", unit: "kg" },
     { name: "waterLiters", label: "Water used", kind: "number", step: "0.1", unit: "litres" },
     { name: "mortalityCount", label: "Mortality", kind: "number", step: "1", unit: "birds", required: true },
+    { name: "avgWeightGrams", label: "Average bird weight", kind: "number", step: "1", unit: "g" },
     { name: "medicineGiven", label: "Medicine given (your record)", kind: "text" },
     { name: "temperatureC", label: "Temperature", kind: "number", step: "0.1", unit: "°C" },
     { name: "notes", label: "Remarks", kind: "textarea" },
