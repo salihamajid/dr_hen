@@ -1,4 +1,5 @@
 import { getT, type I18nKey, type Lang, type T } from "@/lib/i18n";
+import { buildDailySheet, dailySheetToText } from "./dailySheet";
 import type { LoadedReport } from "./queries";
 
 const EN: T = getT("EN");
@@ -107,6 +108,9 @@ export function buildReport(r: LoadedReport, t: T = EN): ReportView {
 }
 
 export function reportToText(r: LoadedReport, farmerName: string, lang: Lang = "EN"): string {
+  // The daily sheet goes out as the sheet, bilingual, whoever it is forwarded to.
+  if (r.type === "daily") return dailySheetToText(buildDailySheet(r));
+
   const t = getT(lang);
   const view = buildReport(r, t);
   const lines = [`*${t("rep.whatsappTitle", { title: view.title })}*`, farmerName, view.subtitle];
