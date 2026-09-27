@@ -17,14 +17,11 @@ export function DrHenCharacter({
   alt = "Dr. Hen, your AI poultry doctor",
   className = "",
   priority = false,
-  sizes = "(min-width: 1280px) 300px, 0px",
 }: {
   src?: string;
   alt?: string;
   className?: string;
   priority?: boolean;
-  /** Rendered width per breakpoint, so the browser picks a sharp file. Default suits the admin hero. */
-  sizes?: string;
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -32,7 +29,7 @@ export function DrHenCharacter({
         src={src}
         alt={alt}
         fill
-        sizes={sizes}
+        sizes="(min-width: 1280px) 300px, 0px"
         priority={priority}
         className="object-contain object-top mix-blend-multiply"
       />

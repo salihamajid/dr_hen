@@ -1,16 +1,12 @@
 import { Check } from "lucide-react";
-import { DrHenCharacter } from "@/components/dashboard/DrHenCharacter";
+import { DrHenPortrait } from "./DrHenPortrait";
 import type { I18nKey, T } from "@/lib/i18n";
 
 const FEATURES: I18nKey[] = ["dashboard.f1", "dashboard.f2", "dashboard.f3", "dashboard.f4", "dashboard.f5"];
 
 /**
- * The farmer's welcome banner: a greeting, then the green "always with you" panel with the
- * Dr. Hen artwork — the same character component the admin dashboard uses.
- *
- * The artwork is an opaque JPEG on white, and `mix-blend-multiply` inside DrHenCharacter is what
- * hides that white. Multiply against the dark green would turn the bird muddy, so it sits on its
- * own pale disc, which is also what the reference design shows.
+ * The farmer's welcome banner: a greeting, then the green "always with you" panel beside the
+ * Dr. Hen portrait, which opens a larger view when tapped.
  */
 export function FarmerHero({ greeting, name, t }: { greeting: string; name: string; t: T }) {
   return (
@@ -42,19 +38,8 @@ export function FarmerHero({ greeting, name, t }: { greeting: string; name: stri
           </div>
         </div>
 
-        {/* Pale disc so the artwork's white background blends away cleanly. The character is inset
-            so the whole bird lands on the disc rather than on the dark green, which multiply would
-            darken. DrHenCharacter sets its own `position: relative`, so the offset lives on this
-            wrapper and the character is only ever given a size. */}
-        <div className="relative mx-auto h-44 w-44 shrink-0 sm:h-52 sm:w-52 lg:h-64 lg:w-64">
-          <div aria-hidden className="absolute inset-0 rounded-full bg-[#eafaf0]" />
-          <div className="absolute inset-[13%]">
-            <DrHenCharacter
-              className="h-full w-full"
-              sizes="(min-width: 1024px) 224px, (min-width: 640px) 184px, 156px"
-              priority
-            />
-          </div>
+        <div className="mx-auto h-44 w-44 shrink-0 sm:h-52 sm:w-52 lg:h-64 lg:w-64">
+          <DrHenPortrait alt={t("dashboard.drHenAlt")} openLabel={t("dashboard.enlarge")} closeLabel={t("common.close")} />
         </div>
       </div>
     </section>
