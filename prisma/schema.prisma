@@ -153,25 +153,30 @@ model DailyReport {
   // working. One row per (farmer, flock, day): the Daily Entry and Attributes
   // screens both upsert this same row, so the fields they share (feed, water,
   // temperature) can never hold two contradictory values for one day.
-  feedKg         Float?
-  waterLiters    Float?
-  temperatureC   Float?
-  humidityPct    Float?
-  lightHours     Float?
-  ventilation    VentilationLevel?
+  feedKg          Float?
+  waterLiters     Float?
+  temperatureC    Float?
+  humidityPct     Float?
+  lightHours      Float?
+  ventilation     VentilationLevel?
   // Farmer-REPORTED history, never a recommendation. Must never be fed to
   // buildFarmerReply or shown as approved — that would route around the
   // DISEASE_PROTOCOL medicine allowlist.
-  medicineGiven  String?
+  medicineGiven   String?
   // The paper Daily Report counts losses in two rounds. mortalityCount stays the total,
   // so every report, chart and alert rule keeps reading one field.
-  mortalityDay   Int?
-  mortalityNight Int?
+  mortalityDay    Int?
+  mortalityNight  Int?
   // Feed as farmers actually count it. feedKg stays for the Attributes screen's intake figure.
-  feedBags       Float?
+  feedBags        Float?
+  /// What the farmer wrote on the sheet. The app can work both out (from the flock's start date
+  /// and the recorded mortality) and offers that as the starting value, but the farmer's own
+  /// figure wins: they can see the birds, and a flock's records are never the whole story.
+  chickAgeDays    Int?
+  remainingChicks Int?
   // Optional on purpose: a required @updatedAt is NOT NULL with no default,
   // which fails on a table that already has rows.
-  updatedAt      DateTime?         @updatedAt
+  updatedAt       DateTime?         @updatedAt
 
   // Postgres treats NULLs as distinct, so legacy rows with flockId = null are
   // NOT deduplicated (intentional — the admin path keeps working). Uniqueness

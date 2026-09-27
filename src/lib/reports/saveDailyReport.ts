@@ -71,6 +71,8 @@ export function toEntryView(r: DailyReport | null, stock?: { feedBags: number | 
     mortalityCount: r ? r.mortalityCount : null,
     mortalityDay: r?.mortalityDay ?? null,
     mortalityNight: r?.mortalityNight ?? null,
+    chickAgeDays: r?.chickAgeDays ?? null,
+    remainingChicks: r?.remainingChicks ?? null,
     avgWeightGrams: r?.avgWeightGrams ?? null,
     medicineGiven: r?.medicineGiven ?? null,
     notes: r?.notes ?? null,

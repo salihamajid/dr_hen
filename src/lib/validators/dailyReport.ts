@@ -37,6 +37,9 @@ export const dailyEntrySchema = z.object({
   mortalityDay: requiredCount("Mortality (day)"),
   mortalityNight: requiredCount("Mortality (night)"),
   feedBags: num("Feed bags", 0, 100_000),
+  // Offered pre-filled from the flock's records, but the farmer can overwrite either one.
+  chickAgeDays: z.preprocess(blankToUndefined, z.coerce.number({ error: "Chick age: enter a number" }).int("Chick age: whole days only").min(0).max(1000).optional()),
+  remainingChicks: z.preprocess(blankToUndefined, z.coerce.number({ error: "Remaining chicks: enter a number" }).int("Remaining chicks: whole birds only").min(0).max(5_000_000).optional()),
   avgWeightGrams: num("Average weight", 1, 10_000),
   // What the farmer says they gave. A record only: it never reaches the AI or the medicine guardrail.
   medicineGiven: text(200),

@@ -65,16 +65,26 @@ export function DailyEntryForm({ flocks }: { flocks: { id: string; name: string 
     };
   }, [flockId, date, router]);
 
-  const valueOf = (name: string) => (edits?.key === key && name in edits.values ? edits.values[name] : str(loaded?.key === key ? loaded.entry[name] : ""));
+  /** Chick age and remaining chicks start from the flock's records, but are the farmer's to change. */
+  const suggestion = (name: string): string => {
+    const d = loaded?.key === key ? loaded.derived : null;
+    if (!d) return "";
+    if (name === "chickAgeDays") return String(d.chickAgeDays);
+    if (name === "remainingChicks") return String(d.remaining);
+    return "";
+  };
+  const valueOf = (name: string) => {
+    if (edits?.key === key && name in edits.values) return edits.values[name];
+    const saved = loaded?.key === key ? loaded.entry[name] : undefined;
+    return saved === null || saved === undefined ? suggestion(name) : str(saved);
+  };
   const setValue = (name: string, v: string) => {
     setMessage(null);
     setEdits((prev) => ({ key, values: { ...(prev?.key === key ? prev.values : {}), [name]: v } }));
   };
 
-  // Totals update as the farmer types, so the two rounds always visibly add up.
+  // The total updates as the farmer types, so the two rounds always visibly add up.
   const liveTotal = toInt(valueOf("mortalityDay")) + toInt(valueOf("mortalityNight"));
-  const savedTotal = Number(loaded?.key === key ? loaded.entry.mortalityCount ?? 0 : 0);
-  const remaining = loaded?.key === key && loaded.derived ? Math.max(0, loaded.derived.remaining + savedTotal - liveTotal) : null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +92,7 @@ export function DailyEntryForm({ flocks }: { flocks: { id: string; name: string 
     setSaving(true);
     setMessage(null);
     setFieldErrors({});
-    const names = ["mortalityDay", "mortalityNight", "feedBags", "avgWeightGrams", "temperatureC", "medicineGiven", "notes", "stockFeedBags", "dieselLitres"];
+    const names = ["chickAgeDays", "mortalityDay", "mortalityNight", "remainingChicks", "feedBags", "avgWeightGrams", "temperatureC", "medicineGiven", "notes", "stockFeedBags", "dieselLitres"];
     const payload: Record<string, string> = { flockId, date };
     for (const name of names) payload[name] = valueOf(name);
     try {
@@ -114,7 +124,7 @@ export function DailyEntryForm({ flocks }: { flocks: { id: string; name: string 
     return e ? <p className="mt-1 text-xs font-normal text-red-600">{msg(e)}</p> : null;
   };
 
-  const numberField = (name: string, labelKey: Parameters<typeof t>[0], unit: string, opts: { step?: string; required?: boolean } = {}) => (
+  const numberField = (name: string, labelKey: Parameters<typeof t>[0], unit: string, opts: { step?: string; required?: boolean; hint?: string } = {}) => (
     <label className="text-xs font-semibold text-black/60">
       {t(labelKey)}
       {unit && <span className="ms-1 font-normal text-black/40">({unit})</span>}
@@ -130,14 +140,16 @@ export function DailyEntryForm({ flocks }: { flocks: { id: string; name: string 
         onChange={(e) => setValue(name, e.target.value)}
         className={`${input} mt-1`}
       />
-      {err(name)}
+      {err(name) ?? (opts.hint ? <p className="mt-1 text-[11px] font-normal text-black/40">{opts.hint}</p> : null)}
     </label>
   );
 
-  const readOnly = (label: string, value: string) => (
-    <div className="rounded-xl bg-[#e7f5ea] px-3 py-2">
+  /** Pure arithmetic of two boxes on this same screen, so it is shown rather than asked for. */
+  const readOnly = (label: string, value: string, note: string) => (
+    <div className="rounded-xl bg-[#e7f5ea] px-4 py-3">
       <div className="text-[11px] text-brand-green-dark/70">{label}</div>
-      <div className="text-base font-bold text-brand-green-dark">{value}</div>
+      <div className="text-xl font-bold text-brand-green-dark">{value}</div>
+      <div className="mt-0.5 text-[11px] text-brand-green-dark/60">{note}</div>
     </div>
   );
 
@@ -163,14 +175,11 @@ export function DailyEntryForm({ flocks }: { flocks: { id: string; name: string 
           {loading ? t("common.loading") : loaded?.exists ? t("entry.existing") : t("entry.none")}
         </p>
 
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {readOnly(t("entry.chickAge"), loaded?.derived ? `${loaded.derived.chickAgeDays} ${t("unit.days")}` : "—")}
-          {readOnly(t("entry.mortalityTotal"), String(liveTotal))}
-          {readOnly(t("entry.remaining"), remaining === null ? "—" : remaining.toLocaleString("en-IN"))}
-        </div>
-        <p className="mt-1.5 text-[11px] text-black/40">{t("entry.workedOut")}</p>
+        <div className="mt-2">{readOnly(t("entry.mortalityTotal"), `${liveTotal} ${t("unit.birds")}`, t("entry.totalNote"))}</div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {numberField("chickAgeDays", "entry.chickAge", t("unit.days"), { hint: t("entry.prefilled") })}
+          {numberField("remainingChicks", "entry.remaining", t("unit.birds"), { hint: t("entry.prefilled") })}
           {numberField("mortalityDay", "entry.mortalityDay", t("unit.birds"), { required: true })}
           {numberField("mortalityNight", "entry.mortalityNight", t("unit.birds"), { required: true })}
           {numberField("feedBags", "entry.feedBags", t("unit.bags"), { step: "0.5" })}

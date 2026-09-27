@@ -142,7 +142,7 @@ export const STRINGS = {
 
   // ---- daily entry + attributes
   "entry.title": ["Daily Entry", "روزانہ اندراج"],
-  "entry.subtitle": ["Record today's feed, water, deaths and temperature. It takes a minute.", "آج کی خوراک، پانی، اموات اور درجہ حرارت درج کریں۔ صرف ایک منٹ لگتا ہے۔"],
+  "entry.subtitle": ["Fill in today's sheet: losses, feed and stock. It takes a minute.", "آج کی شیٹ بھریں: اموات، خوراک اور اسٹاک۔ صرف ایک منٹ لگتا ہے۔"],
   "attr.title": ["Attributes", "فارم کے حالات"],
   "attr.subtitle": ["Farm conditions that affect your flock: temperature, humidity, light and ventilation.", "فارم کے وہ حالات جو آپ کے فلاک پر اثر ڈالتے ہیں: درجہ حرارت، نمی، روشنی اور ہوا کا انتظام۔"],
   "entry.addFlockFirst": ["Add a flock first, then you can record daily data.", "پہلے فلاک شامل کریں، پھر آپ روزانہ ڈیٹا درج کر سکیں گے۔"],
@@ -177,6 +177,8 @@ export const STRINGS = {
   "entry.mortalityTotal": ["Total mortality", "کل ہلاکت"],
   "entry.remaining": ["Remaining chicks", "باقی مرغیاں"],
   "entry.feedBags": ["Feed bags used", "استعمال شدہ خوراک کے تھیلے"],
+  "entry.prefilled": ["Filled in from your records — change it if your count differs.", "آپ کے ریکارڈ سے بھرا گیا — اگر آپ کی گنتی مختلف ہے تو تبدیل کر لیں۔"],
+  "entry.totalNote": ["Day + night, added up for you.", "دن اور رات کا مجموعہ، خود بخود جمع ہو جاتا ہے۔"],
   "entry.workedOut": ["Worked out from your records", "آپ کے ریکارڈ سے خود شمار کیا گیا"],
   "entry.stockHeading": ["Stock — whole farm", "اسٹاک — پورا فارم"],
   "entry.stockNote": ["Counted once a day for the whole farm, not per shed.", "یہ پورے فارم کے لیے دن میں ایک بار گنا جاتا ہے، ہر شیڈ کے لیے الگ نہیں۔"],

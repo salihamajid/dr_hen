@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
     temperatureC,
     mortalityDay,
     mortalityNight,
+    chickAgeDays,
+    remainingChicks,
     avgWeightGrams,
     medicineGiven,
     notes,
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
   const result = await saveDailyReport(
     auth.farmerId,
     { flockId, date },
-    { feedKg, feedBags, waterLiters, temperatureC, mortalityDay, mortalityNight, mortalityCount, avgWeightGrams, medicineGiven, notes },
+    { feedKg, feedBags, waterLiters, temperatureC, mortalityDay, mortalityNight, mortalityCount, chickAgeDays, remainingChicks, avgWeightGrams, medicineGiven, notes },
     { checkMortalityAgainstFlock: true }
   );
   if (!result.ok) return jsonError(result.status, result.error);

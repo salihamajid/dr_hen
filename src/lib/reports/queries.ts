@@ -194,9 +194,10 @@ async function loadDailySheet(farmerId: string, dateStr: string): Promise<LoadRe
       name: f.name,
       breed: f.breed,
       hasEntry: !!e,
-      chickAgeDays: ageInDays(f.startDate, date),
+      // The farmer's own figure wins; the worked-out one is the fallback.
+      chickAgeDays: e?.chickAgeDays ?? ageInDays(f.startDate, date),
       birdsPlaced: f.sizeCount,
-      remaining: Math.max(0, f.sizeCount - (deadBy.get(f.id) ?? 0)),
+      remaining: e?.remainingChicks ?? Math.max(0, f.sizeCount - (deadBy.get(f.id) ?? 0)),
       mortalityDay: e?.mortalityDay ?? null,
       mortalityNight: e?.mortalityNight ?? null,
       mortalityTotal: e?.mortalityCount ?? 0,
