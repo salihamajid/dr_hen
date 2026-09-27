@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { whatsapp } from "./index";
 import type { MetaWebhookPayload, MetaInboundMessage } from "./types";
 import { runDiagnosis, textTurn, imageTurn, audioTurn } from "@/lib/ai/diagnose";
+import { priorConversation } from "@/lib/ai/conversation";
 import { buildFarmerReply } from "@/lib/ai/buildFarmerReply";
 import { transcribeProvider } from "@/lib/ai/transcribe";
 import type { DiseaseCode } from "@/lib/ai/diseaseProtocol";
@@ -121,7 +122,9 @@ async function processInboundMessage(msg: MetaInboundMessage) {
       direction: "INBOUND",
       senderType: "FARMER",
       contentType,
-      textContent: textContent || null,
+      // A photo with no caption used to store nothing, which left a hole in the replayed
+      // conversation; a short placeholder keeps the exchange intact, as the in-app chat does.
+      textContent: textContent || (contentType === "IMAGE" ? "[photo]" : null),
       mediaUrl,
       whatsappMessageId: msg.id,
       rawWebhookPayload: msg as unknown as object,
@@ -195,25 +198,26 @@ export async function respondToFarmerMessage({
     return;
   }
 
-  const history = await prisma.message.findMany({
-    where: { farmerId: farmer.id },
-    orderBy: { createdAt: "asc" },
+  // The MOST RECENT 20, not the oldest: `asc` with `take` returned the first 20 messages a farmer
+  // ever sent, so once a thread passed 20 the model replayed the opening of the conversation for
+  // ever and never saw the question being asked.
+  const recent = await prisma.message.findMany({
+    where: { farmerId: farmer.id, id: { not: inbound.id } },
+    orderBy: { createdAt: "desc" },
     take: 20,
   });
+  // Complete exchanges only, so appending this message below leaves a well-formed request.
+  const conversation: ChatTurn[] = priorConversation(recent.reverse());
 
-  const conversation: ChatTurn[] = history
-    .filter((m) => m.textContent)
-    .map((m) => textTurn(m.senderType === "FARMER" ? "user" : "assistant", m.textContent!));
-
-  let turns = conversation;
+  let turns: ChatTurn[] = [...conversation, textTurn("user", textContent || "[message]")];
   if (resolvedImage) {
     turns = [
-      ...conversation.slice(0, -1),
+      ...conversation,
       imageTurn(resolvedImage.base64, resolvedImage.mimeType, textContent || "Please analyze this photo for signs of poultry disease."),
     ];
   } else if (resolvedAudio) {
     turns = [
-      ...conversation.slice(0, -1),
+      ...conversation,
       audioTurn(
         resolvedAudio.base64,
         resolvedAudio.mimeType,
