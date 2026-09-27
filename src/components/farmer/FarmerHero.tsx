@@ -42,10 +42,19 @@ export function FarmerHero({ greeting, name, t }: { greeting: string; name: stri
           </div>
         </div>
 
-        {/* Pale disc so the artwork's white background blends away cleanly. */}
+        {/* Pale disc so the artwork's white background blends away cleanly. The character is inset
+            so the whole bird lands on the disc rather than on the dark green, which multiply would
+            darken. DrHenCharacter sets its own `position: relative`, so the offset lives on this
+            wrapper and the character is only ever given a size. */}
         <div className="relative mx-auto h-44 w-44 shrink-0 sm:h-52 sm:w-52 lg:h-64 lg:w-64">
           <div aria-hidden className="absolute inset-0 rounded-full bg-[#eafaf0]" />
-          <DrHenCharacter className="absolute inset-x-0 bottom-0 top-2" sizes="(min-width: 1024px) 256px, (min-width: 640px) 208px, 176px" priority />
+          <div className="absolute inset-[13%]">
+            <DrHenCharacter
+              className="h-full w-full"
+              sizes="(min-width: 1024px) 224px, (min-width: 640px) 184px, 156px"
+              priority
+            />
+          </div>
         </div>
       </div>
     </section>
