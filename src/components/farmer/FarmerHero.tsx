@@ -6,9 +6,9 @@ const FEATURES: I18nKey[] = ["dashboard.f1", "dashboard.f2", "dashboard.f3", "da
 
 /**
  * The farmer's welcome banner: a greeting, then the green "always with you" panel beside the
- * Dr. Hen portrait, which opens a larger view when tapped.
+ * Dr. Hen portrait, which opens his assistant card when tapped.
  */
-export function FarmerHero({ greeting, name, t }: { greeting: string; name: string; t: T }) {
+export function FarmerHero({ greeting, name, t, whatsappHref }: { greeting: string; name: string; t: T; whatsappHref: string | null }) {
   return (
     <section className="overflow-hidden rounded-3xl bg-brand-green-dark text-white shadow-sm">
       <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center lg:gap-8">
@@ -39,7 +39,19 @@ export function FarmerHero({ greeting, name, t }: { greeting: string; name: stri
         </div>
 
         <div className="mx-auto h-44 w-44 shrink-0 sm:h-52 sm:w-52 lg:h-64 lg:w-64">
-          <DrHenPortrait alt={t("dashboard.drHenAlt")} openLabel={t("dashboard.enlarge")} closeLabel={t("common.close")} />
+          <DrHenPortrait
+            labels={{
+              alt: t("dashboard.drHenAlt"),
+              open: t("dashboard.enlarge"),
+              close: t("common.close"),
+              greeting: t("assistant.greeting"),
+              ask: t("assistant.askAnything"),
+              chatAi: t("assistant.chatAi"),
+              chatWhatsapp: t("assistant.chatWhatsapp"),
+            }}
+            aiChatHref="/farmer/assistant"
+            whatsappHref={whatsappHref}
+          />
         </div>
       </div>
     </section>

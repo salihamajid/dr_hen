@@ -95,17 +95,17 @@ enum SenderType {
 }
 
 model Farmer {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
   location       String
-  whatsappNumber String   @unique
+  whatsappNumber String       @unique
   flockSize      Int
   numberOfSheds  Int
   flockAgeWeeks  Int
   breed          String
   status         FarmerStatus @default(HEALTHY)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   flocks         Flock[]
   dailyReports   DailyReport[]
@@ -115,6 +115,7 @@ model Farmer {
   vetEscalations VetEscalation[]
   user           User?
   alerts         Alert[]
+  dailyStocks    DailyStock[]
 }
 
 model Flock {
@@ -162,15 +163,21 @@ model DailyReport {
   // buildFarmerReply or shown as approved — that would route around the
   // DISEASE_PROTOCOL medicine allowlist.
   medicineGiven  String?
+  // The paper Daily Report counts losses in two rounds. mortalityCount stays the total,
+  // so every report, chart and alert rule keeps reading one field.
+  mortalityDay   Int?
+  mortalityNight Int?
+  // Feed as farmers actually count it. feedKg stays for the Attributes screen's intake figure.
+  feedBags       Float?
   // Optional on purpose: a required @updatedAt is NOT NULL with no default,
   // which fails on a table that already has rows.
-  updatedAt      DateTime? @updatedAt
+  updatedAt      DateTime?         @updatedAt
 
-  @@index([farmerId, date])
   // Postgres treats NULLs as distinct, so legacy rows with flockId = null are
   // NOT deduplicated (intentional — the admin path keeps working). Uniqueness
   // is guaranteed for the farmer-portal path, where flockId is always set.
   @@unique([farmerId, flockId, date], name: "daily_report_farmer_flock_date")
+  @@index([farmerId, date])
 }
 
 // The 12 client-approved medicines. Seeded from src/lib/ai/diseaseProtocol.ts —
@@ -194,35 +201,35 @@ model MedicineProtocol {
 }
 
 model Treatment {
-  id              String           @id @default(cuid())
+  id              String          @id @default(cuid())
   farmerId        String
-  farmer          Farmer           @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  farmer          Farmer          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   flockId         String?
-  flock           Flock?           @relation(fields: [flockId], references: [id])
+  flock           Flock?          @relation(fields: [flockId], references: [id])
   diseaseCode     DiseaseCode
   medicinesGiven  Json // string[], validated against Medicine at write time
-  status          TreatmentStatus  @default(SCHEDULED)
+  status          TreatmentStatus @default(SCHEDULED)
   startedAt       DateTime?
   completedAt     DateTime?
   nextActionAt    DateTime?
   nextActionNote  String?
-  sourceMessageId String?          @unique
-  sourceMessage   Message?         @relation("TreatmentSource", fields: [sourceMessageId], references: [id])
-  createdAt       DateTime         @default(now())
+  sourceMessageId String?         @unique
+  sourceMessage   Message?        @relation("TreatmentSource", fields: [sourceMessageId], references: [id])
+  createdAt       DateTime        @default(now())
 
   @@index([farmerId, status])
 }
 
 model Vaccination {
-  id               String           @id @default(cuid())
+  id               String          @id @default(cuid())
   farmerId         String
-  farmer           Farmer           @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  farmer           Farmer          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   flockId          String?
-  flock            Flock?           @relation(fields: [flockId], references: [id])
+  flock            Flock?          @relation(fields: [flockId], references: [id])
   vaccineName      String
   scheduledDate    DateTime
   administeredDate DateTime?
-  status           TreatmentStatus  @default(SCHEDULED)
+  status           TreatmentStatus @default(SCHEDULED)
   notes            String?
 
   @@index([farmerId, status])
@@ -244,7 +251,7 @@ model Message {
   rawWebhookPayload Json?
   createdAt         DateTime           @default(now())
 
-  treatmentSourced  Treatment?         @relation("TreatmentSource")
+  treatmentSourced Treatment? @relation("TreatmentSource")
 
   @@index([farmerId, createdAt])
 }
@@ -261,14 +268,14 @@ model FieldVet {
 }
 
 model VetEscalation {
-  id                String   @id @default(cuid())
-  farmerId          String
-  farmer            Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
-  fieldVetId        String?
-  fieldVet          FieldVet? @relation(fields: [fieldVetId], references: [id])
-  triggerMessageId  String?
-  status            String   @default("PENDING") // PENDING | CONTACTED | RESOLVED
-  createdAt         DateTime @default(now())
+  id               String    @id @default(cuid())
+  farmerId         String
+  farmer           Farmer    @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  fieldVetId       String?
+  fieldVet         FieldVet? @relation(fields: [fieldVetId], references: [id])
+  triggerMessageId String?
+  status           String    @default("PENDING") // PENDING | CONTACTED | RESOLVED
+  createdAt        DateTime  @default(now())
 }
 
 model User {
@@ -314,4 +321,21 @@ model Alert {
   resolvedAt DateTime?
 
   @@index([farmerId, status, createdAt])
+}
+
+/// Farm-wide stock for one day. Separate from DailyReport because stock is counted once for the
+/// whole farm, not per shed: putting it on each shed's row would let two sheds disagree.
+model DailyStock {
+  id           String    @id @default(cuid())
+  farmerId     String
+  farmer       Farmer    @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  /// UTC midnight, like DailyReport.date.
+  date         DateTime
+  feedBags     Float?
+  dieselLitres Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime? @updatedAt
+
+  @@unique([farmerId, date], name: "daily_stock_farmer_date")
+  @@index([farmerId, date])
 }

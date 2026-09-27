@@ -22,7 +22,7 @@ export default async function AttributesPage() {
         <h1 className="text-xl font-bold">{t("attr.title")}</h1>
         <p className="text-xs text-black/50">{t("attr.subtitle")}</p>
       </div>
-      <ReportForm mode="attributes" flocks={flocks} />
+      <ReportForm flocks={flocks} />
     </div>
   );
 }

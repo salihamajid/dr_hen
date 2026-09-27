@@ -1,6 +1,5 @@
 import { Pdf } from "./pdf";
-import { GROWTH_REFERENCE_NOTE } from "./growthStandards";
-import { reportRows } from "./reportText";
+import { buildReport } from "./reportText";
 import type { LoadedReport } from "./queries";
 
 const LEFT = 50;
@@ -8,7 +7,10 @@ const RIGHT = 545;
 const BOTTOM = 790;
 
 export function reportToPdf(r: LoadedReport, farmerName: string, generatedOn: string): Buffer {
-  const { title, subtitle, rows } = reportRows(r);
+  // English only: the PDF writer draws Latin glyphs, and Urdu needs joined script, so an Urdu
+  // PDF would print as question marks. The screen and the WhatsApp summary do follow the
+  // farmer's language.
+  const view = buildReport(r);
   const pdf = new Pdf();
   let y = 60;
 
@@ -21,26 +23,33 @@ export function reportToPdf(r: LoadedReport, farmerName: string, generatedOn: st
 
   pdf.text(LEFT, y, "Dr. Hen", { size: 11, bold: true, gray: 0.35 });
   y += 26;
-  pdf.text(LEFT, y, title, { size: 20, bold: true });
+  pdf.text(LEFT, y, view.title, { size: 20, bold: true });
   y += 22;
-  pdf.text(LEFT, y, subtitle, { size: 11, gray: 0.3 });
+  pdf.text(LEFT, y, view.subtitle, { size: 11, gray: 0.3 });
   y += 15;
-  pdf.text(LEFT, y, `Farmer: ${farmerName}    Generated: ${generatedOn}`, { size: 9, gray: 0.5 });
+  pdf.text(LEFT, y, `Farm: ${farmerName}    Generated: ${generatedOn}`, { size: 9, gray: 0.5 });
   y += 12;
   pdf.line(LEFT, y, RIGHT, y);
   y += 22;
 
-  for (const [k, v] of rows) {
-    // Long values (remarks) wrap at ~70 chars.
-    const wrapped = v.match(/.{1,70}(\s|$)|\S+/g) ?? [v];
-    ensure(16 * wrapped.length);
-    pdf.text(LEFT, y, k, { size: 10, bold: true });
-    wrapped.forEach((part, i) => pdf.text(230, y + i * 14, part.trim(), { size: 10 }));
-    y += 16 * Math.max(1, wrapped.length);
+  for (const section of view.sections) {
+    if (section.heading) {
+      ensure(30);
+      pdf.rect(LEFT, y - 11, RIGHT - LEFT, 20, [0.91, 0.96, 0.92]);
+      pdf.text(LEFT + 8, y + 3, section.heading, { size: 11, bold: true });
+      y += 26;
+    }
+    for (const [k, v] of section.rows) {
+      const wrapped = v.match(/.{1,60}(\s|$)|\S+/g) ?? [v];
+      ensure(16 * wrapped.length);
+      pdf.text(LEFT + 8, y, k, { size: 10, bold: true });
+      wrapped.forEach((part, i) => pdf.text(260, y + i * 14, part.trim(), { size: 10 }));
+      y += 16 * Math.max(1, wrapped.length);
+    }
+    y += 8;
   }
 
   if (r.type === "mortality") {
-    y += 14;
     ensure(150);
     pdf.text(LEFT, y, "Daily mortality (birds)", { size: 11, bold: true });
     y += 12;
@@ -70,7 +79,6 @@ export function reportToPdf(r: LoadedReport, farmerName: string, generatedOn: st
   }
 
   if (r.type === "growth") {
-    y += 14;
     ensure(60);
     pdf.text(LEFT, y, "Age (days)", { size: 9, bold: true });
     pdf.text(150, y, "Date", { size: 9, bold: true });
@@ -87,17 +95,15 @@ export function reportToPdf(r: LoadedReport, farmerName: string, generatedOn: st
       pdf.text(340, y, p.expected === null ? "-" : String(p.expected), { size: 9 });
       y += 13;
     }
-    if (r.hasReference) {
-      y += 8;
-      ensure(30);
-      pdf.text(LEFT, y, GROWTH_REFERENCE_NOTE.slice(0, 95), { size: 8, gray: 0.5 });
-      pdf.text(LEFT, y + 10, GROWTH_REFERENCE_NOTE.slice(95), { size: 8, gray: 0.5 });
-      y += 22;
-    }
   }
 
-  ensure(40);
-  y += 16;
-  pdf.text(LEFT, y, "This report summarises the farmer's own records. It does not replace a veterinary assessment.", { size: 8, gray: 0.5 });
+  ensure(20 * view.footnotes.length + 20);
+  y += 10;
+  for (const note of view.footnotes) {
+    for (const part of note.match(/.{1,110}(\s|$)|\S+/g) ?? [note]) {
+      pdf.text(LEFT, y, part.trim(), { size: 8, gray: 0.5 });
+      y += 11;
+    }
+  }
   return pdf.build();
 }

@@ -1,4 +1,3 @@
-import type { DailyReport } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ageInDays, expectedWeightGrams, growthStatus, hasGrowthReference, type GrowthStatus } from "./growthStandards";
 import { parseDateOnly } from "./dates";
@@ -49,17 +48,41 @@ export interface GrowthReport {
   points: { ageDays: number; date: string | null; actual: number | null; expected: number | null }[];
 }
 
+/** One shed's line on the daily sheet. Chick age and remaining are derived, never typed. */
+export interface ShedLine {
+  flockId: string;
+  name: string;
+  breed: string;
+  hasEntry: boolean;
+  chickAgeDays: number;
+  birdsPlaced: number;
+  remaining: number;
+  mortalityDay: number | null;
+  mortalityNight: number | null;
+  mortalityTotal: number;
+  feedBags: number | null;
+  avgWeightGrams: number | null;
+  temperatureC: number | null;
+  medicineGiven: string | null;
+  notes: string | null;
+}
+
+/** The paper Daily Report: one day, every shed, plus the farm's stock. */
 export interface DailyReportView {
   type: "daily";
-  flock: FlockInfo;
   date: string;
-  entry: DailyReport | null;
+  farmName: string;
+  sheds: ShedLine[];
+  stock: { feedBags: number | null; dieselLitres: number | null };
 }
 
 export type LoadedReport = MortalityReport | GrowthReport | DailyReportView;
 export type LoadResult = { ok: true; report: LoadedReport } | { ok: false; status: 400 | 404; error: string };
 
 export async function loadReport(farmerId: string, req: ReportRequest): Promise<LoadResult> {
+  if (req.type === "daily") return loadDailySheet(farmerId, req.date);
+
+  // The flock id from the request is only ever a filter beside the session's farmerId.
   const flock = await prisma.flock.findFirst({ where: { id: req.flockId, farmerId }, select: flockSelect });
   if (!flock) return { ok: false, status: 404, error: "Not found" };
 
@@ -140,8 +163,59 @@ export async function loadReport(farmerId: string, req: ReportRequest): Promise<
     };
   }
 
-  const date = parseDateOnly(req.date);
+  return { ok: false, status: 400, error: "Unknown report." };
+}
+
+async function loadDailySheet(farmerId: string, dateStr: string): Promise<LoadResult> {
+  const date = parseDateOnly(dateStr);
   if (!date) return { ok: false, status: 400, error: "Choose a valid date." };
-  const entry = await prisma.dailyReport.findFirst({ where: { farmerId, flockId: flock.id, date } });
-  return { ok: true, report: { type: "daily", flock, date: req.date, entry } };
+
+  const [farmer, flocks, entries, stock] = await Promise.all([
+    prisma.farmer.findFirst({ where: { id: farmerId }, select: { name: true } }),
+    prisma.flock.findMany({ where: { farmerId, active: true }, orderBy: { startDate: "asc" }, select: flockSelect }),
+    prisma.dailyReport.findMany({ where: { farmerId, date } }),
+    prisma.dailyStock.findFirst({ where: { farmerId, date } }),
+  ]);
+  if (!farmer) return { ok: false, status: 404, error: "Not found" };
+
+  // Deaths up to and including the day, per shed, for the "remaining chicks" line.
+  const deadToDate = await prisma.dailyReport.groupBy({
+    by: ["flockId"],
+    where: { farmerId, flockId: { in: flocks.map((f) => f.id) }, date: { lte: date } },
+    _sum: { mortalityCount: true },
+  });
+  const deadBy = new Map(deadToDate.map((d) => [d.flockId, d._sum.mortalityCount ?? 0]));
+  const entryBy = new Map(entries.filter((e) => e.flockId).map((e) => [e.flockId!, e]));
+
+  const sheds: ShedLine[] = flocks.map((f) => {
+    const e = entryBy.get(f.id) ?? null;
+    return {
+      flockId: f.id,
+      name: f.name,
+      breed: f.breed,
+      hasEntry: !!e,
+      chickAgeDays: ageInDays(f.startDate, date),
+      birdsPlaced: f.sizeCount,
+      remaining: Math.max(0, f.sizeCount - (deadBy.get(f.id) ?? 0)),
+      mortalityDay: e?.mortalityDay ?? null,
+      mortalityNight: e?.mortalityNight ?? null,
+      mortalityTotal: e?.mortalityCount ?? 0,
+      feedBags: e?.feedBags ?? null,
+      avgWeightGrams: e?.avgWeightGrams ?? null,
+      temperatureC: e?.temperatureC ?? null,
+      medicineGiven: e?.medicineGiven ?? null,
+      notes: e?.notes ?? null,
+    };
+  });
+
+  return {
+    ok: true,
+    report: {
+      type: "daily",
+      date: dateStr,
+      farmName: farmer.name,
+      sheds,
+      stock: { feedBags: stock?.feedBags ?? null, dieselLitres: stock?.dieselLitres ?? null },
+    },
+  };
 }

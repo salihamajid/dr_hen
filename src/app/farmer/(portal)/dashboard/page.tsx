@@ -51,7 +51,7 @@ export default async function FarmerDashboardPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
-      <FarmerHero greeting={t(greetingKey())} name={farmer?.name ?? ""} t={t} />
+      <FarmerHero greeting={t(greetingKey())} name={farmer?.name ?? ""} t={t} whatsappHref={waLink} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <FarmerStatCard

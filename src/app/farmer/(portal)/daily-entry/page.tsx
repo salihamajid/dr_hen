@@ -1,4 +1,4 @@
-import { ReportForm } from "@/components/farmer/ReportForm";
+import { DailyEntryForm } from "@/components/farmer/DailyEntryForm";
 import { requireFarmer } from "@/lib/auth/dal";
 import { getT } from "@/lib/i18n";
 import { localizedTitle } from "@/lib/i18n/metadata";
@@ -22,7 +22,7 @@ export default async function DailyEntryPage() {
         <h1 className="text-xl font-bold">{t("entry.title")}</h1>
         <p className="text-xs text-black/50">{t("entry.subtitle")}</p>
       </div>
-      <ReportForm mode="daily" flocks={flocks} />
+      <DailyEntryForm flocks={flocks} />
     </div>
   );
 }

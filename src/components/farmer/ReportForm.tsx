@@ -5,31 +5,20 @@ import { useRouter } from "next/navigation";
 import { useMsg, useT } from "./I18nProvider";
 import type { I18nKey } from "@/lib/i18n";
 
-type Mode = "daily" | "attributes";
 type Entry = Record<string, string | number | null>;
-type Field = { name: string; labelKey: I18nKey; kind: "number" | "text" | "textarea" | "select"; step?: string; unitKey?: I18nKey; unitText?: string; required?: boolean; options?: string[] };
+type Field = { name: string; labelKey: I18nKey; kind: "number" | "select"; step?: string; unitKey?: I18nKey; unitText?: string; options?: string[] };
 
-const FIELDS: Record<Mode, Field[]> = {
-  daily: [
-    { name: "feedKg", labelKey: "field.feedUsed", kind: "number", step: "0.1", unitKey: "unit.kg" },
-    { name: "waterLiters", labelKey: "field.waterUsed", kind: "number", step: "0.1", unitKey: "unit.litres" },
-    { name: "mortalityCount", labelKey: "field.mortality", kind: "number", step: "1", unitKey: "unit.birds", required: true },
-    { name: "avgWeightGrams", labelKey: "field.avgWeight", kind: "number", step: "1", unitKey: "unit.g" },
-    { name: "medicineGiven", labelKey: "field.medicine", kind: "text" },
-    { name: "temperatureC", labelKey: "field.temperature", kind: "number", step: "0.1", unitText: "°C" },
-    { name: "notes", labelKey: "field.remarks", kind: "textarea" },
-  ],
-  attributes: [
-    { name: "feedKg", labelKey: "field.feedIntake", kind: "number", step: "0.1", unitKey: "unit.kg" },
-    { name: "waterLiters", labelKey: "field.waterIntake", kind: "number", step: "0.1", unitKey: "unit.litres" },
-    { name: "temperatureC", labelKey: "field.temperature", kind: "number", step: "0.1", unitText: "°C" },
-    { name: "humidityPct", labelKey: "field.humidity", kind: "number", step: "1", unitText: "%" },
-    { name: "lightHours", labelKey: "field.light", kind: "number", step: "0.5", unitKey: "unit.hours" },
-    { name: "ventilation", labelKey: "field.ventilation", kind: "select", options: ["POOR", "AVERAGE", "GOOD"] },
-  ],
-};
-
-const ENDPOINT: Record<Mode, string> = { daily: "/api/farmer/daily-entry", attributes: "/api/farmer/parameters" };
+// The Attributes screen: farm conditions. Daily Entry has its own form (DailyEntryForm),
+// because it mirrors the paper Daily Report. Both still write the same per-(flock, day) row,
+// each touching only its own fields, so neither can wipe the other's numbers.
+const FIELDS: Field[] = [
+  { name: "feedKg", labelKey: "field.feedIntake", kind: "number", step: "0.1", unitKey: "unit.kg" },
+  { name: "waterLiters", labelKey: "field.waterIntake", kind: "number", step: "0.1", unitKey: "unit.litres" },
+  { name: "temperatureC", labelKey: "field.temperature", kind: "number", step: "0.1", unitText: "°C" },
+  { name: "humidityPct", labelKey: "field.humidity", kind: "number", step: "1", unitText: "%" },
+  { name: "lightHours", labelKey: "field.light", kind: "number", step: "0.5", unitKey: "unit.hours" },
+  { name: "ventilation", labelKey: "field.ventilation", kind: "select", options: ["POOR", "AVERAGE", "GOOD"] },
+];
 
 // The farmer's own calendar day, not UTC's (Pakistan is UTC+5).
 function localToday() {
@@ -39,7 +28,7 @@ function localToday() {
 
 const str = (v: string | number | null | undefined) => (v === null || v === undefined ? "" : String(v));
 
-export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string; name: string }[] }) {
+export function ReportForm({ flocks }: { flocks: { id: string; name: string }[] }) {
   const router = useRouter();
   const t = useT();
   const msg = useMsg();
@@ -73,7 +62,6 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
     };
   }, [flockId, date, router]);
 
-  const fields = FIELDS[mode];
   const valueOf = (f: Field) => (edits?.key === key && f.name in edits.values ? edits.values[f.name] : str(loaded?.key === key ? loaded.entry[f.name] : ""));
   const setValue = (name: string, v: string) => {
     setMessage(null);
@@ -87,9 +75,9 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
     setMessage(null);
     setFieldErrors({});
     const payload: Record<string, string> = { flockId, date };
-    for (const f of fields) payload[f.name] = valueOf(f);
+    for (const f of FIELDS) payload[f.name] = valueOf(f);
     try {
-      const res = await fetch(ENDPOINT[mode], { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch("/api/farmer/parameters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json().catch(() => ({}));
       if (res.status === 401) return router.replace("/farmer/login");
       if (!res.ok) {
@@ -99,7 +87,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
       }
       setLoaded({ key, entry: data.entry, exists: true });
       setEdits(null);
-      setMessage({ kind: "ok", text: mode === "daily" ? t("entry.savedEntry") : t("entry.savedParams") });
+      setMessage({ kind: "ok", text: t("entry.savedParams") });
     } catch {
       setMessage({ kind: "err", text: t("common.networkError") });
     } finally {
@@ -108,11 +96,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
   }
 
   if (flocks.length === 0) {
-    return (
-      <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">
-        {t("entry.addFlockFirst")}
-      </p>
-    );
+    return <p className="rounded-2xl bg-white p-8 text-center text-sm text-black/45 shadow-sm ring-1 ring-black/5">{t("entry.addFlockFirst")}</p>;
   }
 
   const input = "w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-brand-green disabled:opacity-60";
@@ -139,19 +123,17 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
       </p>
 
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
-        {fields.map((f) => {
+        {FIELDS.map((f) => {
           const err = fieldErrors[f.name]?.[0];
           const unit = f.unitKey ? t(f.unitKey) : f.unitText;
           const common = { name: f.name, value: valueOf(f), disabled: loading, className: `${input} mt-1` };
           return (
-            <label key={f.name} className={`text-xs font-semibold text-black/60 ${f.kind === "textarea" ? "sm:col-span-2" : ""}`}>
+            <label key={f.name} className="text-xs font-semibold text-black/60">
               {t(f.labelKey)}
               {unit && <span className="ms-1 font-normal text-black/40">({unit})</span>}
               {f.kind === "number" && (
-                <input {...common} type="number" inputMode="decimal" step={f.step} min={0} required={f.required} onChange={(e) => setValue(f.name, e.target.value)} />
+                <input {...common} type="number" inputMode="decimal" step={f.step} min={0} onChange={(e) => setValue(f.name, e.target.value)} />
               )}
-              {f.kind === "text" && <input {...common} type="text" maxLength={200} onChange={(e) => setValue(f.name, e.target.value)} />}
-              {f.kind === "textarea" && <textarea {...common} rows={3} maxLength={1000} onChange={(e) => setValue(f.name, e.target.value)} />}
               {f.kind === "select" && (
                 <select {...common} onChange={(e) => setValue(f.name, e.target.value)}>
                   <option value="">{t("common.select")}</option>
@@ -173,7 +155,7 @@ export function ReportForm({ mode, flocks }: { mode: Mode; flocks: { id: string;
       )}
 
       <button type="submit" disabled={saving || loading} className="mt-4 rounded-xl bg-brand-green-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-        {saving ? t("common.saving") : mode === "daily" ? t("entry.saveEntry") : t("entry.saveParams")}
+        {saving ? t("common.saving") : t("entry.saveParams")}
       </button>
     </form>
   );

@@ -40,18 +40,44 @@ export async function saveDailyReport(
   return { ok: true, report };
 }
 
+/**
+ * Farm-wide stock for one day. Kept out of DailyReport because it is counted once for the whole
+ * farm: storing it per shed would let two sheds hold different answers for the same question.
+ */
+export async function saveDailyStock(
+  farmerId: string,
+  dateStr: string,
+  fields: { feedBags?: number; dieselLitres?: number }
+): Promise<void> {
+  const date = parseDateOnly(dateStr);
+  if (!date) return;
+  const data = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined));
+  if (Object.keys(data).length === 0) return;
+
+  await prisma.dailyStock.upsert({
+    where: { daily_stock_farmer_date: { farmerId, date } },
+    create: { farmerId, date, ...data },
+    update: data,
+  });
+}
+
 /** The fields the two screens read and write, as plain JSON for the client. */
-export function toEntryView(r: DailyReport | null) {
+export function toEntryView(r: DailyReport | null, stock?: { feedBags: number | null; dieselLitres: number | null } | null) {
   return {
     feedKg: r?.feedKg ?? null,
+    feedBags: r?.feedBags ?? null,
     waterLiters: r?.waterLiters ?? null,
     temperatureC: r?.temperatureC ?? null,
     mortalityCount: r ? r.mortalityCount : null,
+    mortalityDay: r?.mortalityDay ?? null,
+    mortalityNight: r?.mortalityNight ?? null,
     avgWeightGrams: r?.avgWeightGrams ?? null,
     medicineGiven: r?.medicineGiven ?? null,
     notes: r?.notes ?? null,
     humidityPct: r?.humidityPct ?? null,
     lightHours: r?.lightHours ?? null,
     ventilation: r?.ventilation ?? null,
+    stockFeedBags: stock?.feedBags ?? null,
+    dieselLitres: stock?.dieselLitres ?? null,
   };
 }
