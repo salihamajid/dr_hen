@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { handleInboundWebhook } from "@/lib/whatsapp/handleInboundWebhook";
+import { recordDeliveryStatuses } from "@/lib/whatsapp/deliveryStatus";
 import { whatsapp } from "@/lib/whatsapp";
 import type { MetaWebhookPayload } from "@/lib/whatsapp/types";
 
@@ -35,16 +36,7 @@ export async function POST(req: NextRequest) {
   // This is the ONLY place a real delivery failure shows up — the synchronous
   // send response only confirms Meta *accepted* the request, not that the
   // recipient's phone actually got it.
-  for (const entry of payload.entry) {
-    for (const change of entry.changes) {
-      for (const status of change.value.statuses ?? []) {
-        console.log(
-          `STATUS UPDATE: wamid=${status.id} to=${status.recipient_id} status=${status.status}` +
-            (status.errors?.length ? ` errors=${JSON.stringify(status.errors)}` : "")
-        );
-      }
-    }
-  }
+  const statuses = payload.entry.flatMap((e) => e.changes.flatMap((c) => c.value.statuses ?? []));
 
   // Meta expects a fast 200 OK and retries (with backoff, over up to 36h) on
   // failure or timeout — the AI diagnosis + WhatsApp send can take several
@@ -53,6 +45,9 @@ export async function POST(req: NextRequest) {
   // retry landing after this is a safe no-op.
   after(async () => {
     try {
+      // Persisted after the ack, like the inbound work: Meta wants a fast 200 and
+      // retries the whole payload if we are slow.
+      if (statuses.length) await recordDeliveryStatuses(statuses);
       await handleInboundWebhook(payload);
     } catch (err) {
       console.error("[whatsapp webhook] processing failed:", err);

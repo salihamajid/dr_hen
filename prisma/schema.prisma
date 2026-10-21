@@ -116,10 +116,16 @@ model Farmer {
   user           User?
   alerts         Alert[]
   dailyStocks    DailyStock[]
+  feedOrders     FeedOrder[]
+  broadcasts     BroadcastRecipient[]
+  adminNotices   AdminNotification[]
 }
 
 model Flock {
   id        String   @id @default(cuid())
+  /// When the shed was registered. startDate is when the birds arrived, which is often
+  /// backdated, so it cannot answer "how many flocks were added this month".
+  createdAt DateTime @default(now())
   farmerId  String
   farmer    Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   name      String
@@ -241,10 +247,10 @@ model Vaccination {
 }
 
 model Message {
-  id                String             @id @default(cuid())
+  id                String                 @id @default(cuid())
   farmerId          String
-  farmer            Farmer             @relation(fields: [farmerId], references: [id], onDelete: Cascade)
-  channel           MessageChannel     @default(WHATSAPP)
+  farmer            Farmer                 @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  channel           MessageChannel         @default(WHATSAPP)
   direction         MessageDirection
   senderType        SenderType
   contentType       MessageContentType
@@ -252,11 +258,17 @@ model Message {
   mediaUrl          String?
   detectedLanguage  String?
   aiDiagnosis       Json?
-  whatsappMessageId String?            @unique
+  whatsappMessageId String?                @unique
   rawWebhookPayload Json?
-  createdAt         DateTime           @default(now())
+  /// Meta's asynchronous receipt for messages WE sent. The send response only proves Meta
+  /// accepted the request; this is the only place real delivery or failure shows up.
+  deliveryStatus    MessageDeliveryStatus?
+  deliveredAt       DateTime?
+  deliveryError     String?
+  createdAt         DateTime               @default(now())
 
-  treatmentSourced Treatment? @relation("TreatmentSource")
+  treatmentSourced   Treatment?          @relation("TreatmentSource")
+  broadcastRecipient BroadcastRecipient?
 
   @@index([farmerId, createdAt])
 }
@@ -284,22 +296,23 @@ model VetEscalation {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String      @id @default(cuid())
   // ADMIN logs in by email; FARMER by phone. Each is null for the other role,
   // which is what makes cross-role login structurally impossible.
-  email        String?   @unique
-  phone        String?   @unique
+  email        String?     @unique
+  phone        String?     @unique
   passwordHash String
   role         UserRole
   // null = the farmer hasn't picked a language yet -> show the chooser.
   language     Language?
   // Bump to invalidate every outstanding session cookie for this user.
-  tokenVersion Int       @default(0)
-  farmerId     String?   @unique
-  farmer       Farmer?   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  tokenVersion Int         @default(0)
+  farmerId     String?     @unique
+  farmer       Farmer?     @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  broadcasts   Broadcast[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Alert {
@@ -343,4 +356,113 @@ model DailyStock {
 
   @@unique([farmerId, date], name: "daily_stock_farmer_date")
   @@index([farmerId, date])
+}
+
+enum MessageDeliveryStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum BroadcastKind {
+  MESSAGE
+  VIDEO
+  TEMPLATE
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SENDING
+  SENT
+  PARTIAL
+  FAILED
+}
+
+enum FeedOrderStatus {
+  REQUESTED
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
+
+enum AdminNotificationKind {
+  CRITICAL_ALERT
+  VET_ESCALATION
+  BROADCAST_FAILED
+  FEED_ORDER
+}
+
+/// One admin-initiated send to many farmers. Rows here are the Broadcast Center's history;
+/// the per-farmer outcome lives in BroadcastRecipient so a partial failure stays visible.
+model Broadcast {
+  id             String               @id @default(cuid())
+  kind           BroadcastKind
+  title          String
+  body           String?
+  mediaUrl       String?
+  templateName   String?
+  status         BroadcastStatus      @default(DRAFT)
+  /// Farmers it was aimed at, kept even if recipient rows are pruned later.
+  recipientCount Int                  @default(0)
+  deliveredCount Int                  @default(0)
+  failedCount    Int                  @default(0)
+  createdById    String?
+  createdBy      User?                @relation(fields: [createdById], references: [id])
+  createdAt      DateTime             @default(now())
+  sentAt         DateTime?
+  recipients     BroadcastRecipient[]
+
+  @@index([createdAt])
+}
+
+model BroadcastRecipient {
+  id          String                 @id @default(cuid())
+  broadcastId String
+  broadcast   Broadcast              @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  farmerId    String
+  farmer      Farmer                 @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  /// The Message this produced, so delivery receipts flow back to the broadcast.
+  messageId   String?                @unique
+  message     Message?               @relation(fields: [messageId], references: [id])
+  status      MessageDeliveryStatus?
+  error       String?
+  sentAt      DateTime?
+
+  @@unique([broadcastId, farmerId])
+  @@index([farmerId])
+}
+
+/// A farmer asking for feed. Recorded for the admin rather than messaged out, so it costs
+/// nothing against WhatsApp's business-initiated limits.
+model FeedOrder {
+  id        String          @id @default(cuid())
+  farmerId  String
+  farmer    Farmer          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  bags      Int
+  note      String?
+  status    FeedOrderStatus @default(REQUESTED)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime?       @updatedAt
+
+  @@index([farmerId, status])
+  @@index([status, createdAt])
+}
+
+/// The admin bell. Read state is why this is stored rather than derived from alerts.
+model AdminNotification {
+  id        String                @id @default(cuid())
+  kind      AdminNotificationKind
+  title     String
+  body      String?
+  /// In-app path to open, e.g. /farmers/<id>.
+  link      String?
+  farmerId  String?
+  farmer    Farmer?               @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  /// Stops the same event raising a second notification.
+  dedupeKey String                @unique
+  readAt    DateTime?
+  createdAt DateTime              @default(now())
+
+  @@index([readAt, createdAt])
 }
