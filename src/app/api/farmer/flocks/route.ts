@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireFarmerApi } from "@/lib/auth/dal";
 import { jsonError, parseJsonBody } from "@/lib/auth/http";
 import { startDateForAge } from "@/lib/flocks";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 import { flockCreateSchema, MAX_FLOCKS_PER_FARMER } from "@/lib/validators/flock";
 
 export async function GET() {
@@ -35,5 +36,6 @@ export async function POST(req: NextRequest) {
     data: { farmerId: auth.farmerId, name, breed, sizeCount, ageWeeks, startDate: startDateForAge(ageWeeks) },
     select: { id: true, name: true },
   });
+  notifyFarmerChange(auth.farmerId, "flock");
   return NextResponse.json({ flock }, { status: 201 });
 }

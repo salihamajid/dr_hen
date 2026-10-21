@@ -1,5 +1,6 @@
 import type { Farmer, Message } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 import { whatsapp } from "./index";
 import type { MetaWebhookPayload, MetaInboundMessage } from "./types";
 import { runDiagnosis, textTurn, imageTurn, audioTurn } from "@/lib/ai/diagnose";
@@ -131,6 +132,10 @@ async function processInboundMessage(msg: MetaInboundMessage) {
     },
   });
 
+  // Announced before the AI runs: the admin's Messages page should show that the farmer
+  // wrote in straight away, not after however long Gemini takes to answer.
+  notifyFarmerChange(farmer.id, "message");
+
   await respondToFarmerMessage({
     farmer,
     inbound,
@@ -158,21 +163,28 @@ export const inAppDelivery: Delivery = { channel: "IN_APP", send: async () => nu
  * WhatsApp webhook and the farmer portal's in-app chat so both behave identically,
  * and only the delivery differs.
  */
-export async function respondToFarmerMessage({
-  farmer,
-  inbound,
-  textContent,
-  resolvedImage,
-  resolvedAudio,
-  delivery,
-}: {
+export interface RespondArgs {
   farmer: Farmer;
   inbound: Message;
   textContent: string;
   resolvedImage: { base64: string; mimeType: string } | null;
   resolvedAudio: { base64: string; mimeType: string } | null;
   delivery: Delivery;
-}) {
+}
+
+export async function respondToFarmerMessage(args: RespondArgs) {
+  try {
+    await respond(args);
+  } finally {
+    // One announcement for the whole exchange, in a finally so it still happens on the
+    // paths that return early (the VET shortcut) or throw (a failed Gemini call): the
+    // farmer's message is already stored either way, and the thread, the alert badge, the
+    // vet queue and the admin's message count may all have moved.
+    notifyFarmerChange(args.farmer.id, "message");
+  }
+}
+
+async function respond({ farmer, inbound, textContent, resolvedImage, resolvedAudio, delivery }: RespondArgs) {
   // "VET" trigger — short-circuit straight to escalation without calling the AI.
   if (/\bvet\b/i.test(textContent)) {
     const ackText =

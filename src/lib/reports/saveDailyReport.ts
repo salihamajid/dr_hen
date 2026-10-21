@@ -1,5 +1,6 @@
 import type { DailyReport, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 import { isAllowedEntryDate, parseDateOnly } from "./dates";
 
 export type SaveResult =
@@ -37,6 +38,9 @@ export async function saveDailyReport(
     create: { ...(data as Prisma.DailyReportUncheckedCreateInput), farmerId, flockId: flock.id, date },
     update: data,
   });
+  // Announced here rather than in the two route handlers: this is the one writer, so a
+  // third screen added later is live without anyone remembering to tell the dashboards.
+  notifyFarmerChange(farmerId, "daily-entry");
   return { ok: true, report };
 }
 
@@ -59,6 +63,7 @@ export async function saveDailyStock(
     create: { farmerId, date, ...data },
     update: data,
   });
+  notifyFarmerChange(farmerId, "daily-entry");
 }
 
 /** The fields the two screens read and write, as plain JSON for the client. */

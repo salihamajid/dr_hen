@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { whatsapp } from "@/lib/whatsapp";
 import { isSessionWindowOpen } from "@/lib/whatsapp/sessionWindow";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 // Before a farmer has ever messaged Dr. Hen, there is no open WhatsApp
 // "customer service window", so the FIRST message to them must go through an
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
       whatsappMessageId: result.messageId,
     },
   });
+  notifyFarmerChange(farmer.id, "message");
 
   return NextResponse.json({
     message,

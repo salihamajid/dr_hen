@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 const vaccinationInputSchema = z.object({
   farmerId: z.string().min(1),
@@ -35,5 +36,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const vaccination = await prisma.vaccination.create({ data: parsed.data });
+  notifyFarmerChange(vaccination.farmerId, "vaccination");
   return NextResponse.json({ vaccination }, { status: 201 });
 }

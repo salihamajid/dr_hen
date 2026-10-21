@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 const vaccinationUpdateSchema = z.object({
   status: z.enum(["SCHEDULED", "IN_PROGRESS", "COMPLETED", "OVERDUE"]).optional(),
@@ -21,5 +22,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const vaccination = await prisma.vaccination.update({ where: { id }, data: parsed.data });
+  notifyFarmerChange(vaccination.farmerId, "vaccination");
   return NextResponse.json({ vaccination });
 }

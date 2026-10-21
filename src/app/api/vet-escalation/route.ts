@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 export async function GET() {
   // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
@@ -34,5 +35,6 @@ export async function PATCH(req: NextRequest) {
     where: { id: parsed.data.id },
     data: { status: parsed.data.status },
   });
+  notifyFarmerChange(escalation.farmerId, "vet-escalation");
   return NextResponse.json({ escalation });
 }

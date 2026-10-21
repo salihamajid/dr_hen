@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireFarmerApi } from "@/lib/auth/dal";
 import { jsonError, parseJsonBody } from "@/lib/auth/http";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 const bodySchema = z.object({ action: z.enum(["read", "acknowledge", "resolve"]) });
 
@@ -28,6 +29,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     // Nothing changed: either it isn't this farmer's alert (404) or it was already in that state (fine).
     const exists = await prisma.alert.findFirst({ where, select: { id: true } });
     if (!exists) return jsonError(404, "Not found");
+  } else {
+    // Only when something actually moved: re-reading was already in that state is noise.
+    notifyFarmerChange(auth.farmerId, "alert");
   }
   return NextResponse.json({ ok: true });
 }

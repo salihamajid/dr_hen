@@ -1,5 +1,6 @@
 import type { MessageDeliveryStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notifyAdminChange } from "@/lib/realtime/bus";
 import type { MetaMessageStatus } from "./types";
 
 const MAP: Record<MetaMessageStatus["status"], MessageDeliveryStatus> = {
@@ -21,6 +22,8 @@ const RANK: Record<MessageDeliveryStatus, number> = { SENT: 1, DELIVERED: 2, REA
  * written to the server log — so nothing in the product could show a delivery state.
  */
 export async function recordDeliveryStatuses(statuses: MetaMessageStatus[]): Promise<void> {
+  let changed = false;
+
   for (const s of statuses) {
     const next = MAP[s.status];
     if (!next) continue;
@@ -45,11 +48,16 @@ export async function recordDeliveryStatuses(statuses: MetaMessageStatus[]): Pro
       });
 
       await syncBroadcastRecipient(message.id, next, error);
+      changed = true;
     } catch (err) {
       // One bad receipt must never cost us the rest of the batch.
       console.error(`[whatsapp] could not record delivery status for ${s.id}:`, err);
     }
   }
+
+  // Once for the batch, not once per receipt: a broadcast to 250 farmers arrives as a
+  // stream of receipts, and each one is not worth a re-read of the admin dashboard.
+  if (changed) notifyAdminChange("delivery");
 }
 
 /** Mirrors the receipt onto the broadcast that produced the message, and recounts its totals. */

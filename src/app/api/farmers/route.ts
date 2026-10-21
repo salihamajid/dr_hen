@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { farmerInputSchema } from "@/lib/validators/farmer";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyAdminChange } from "@/lib/realtime/bus";
 
 export async function GET(req: NextRequest) {
   // Defence in depth: src/proxy.ts is only a first filter, so every admin handler re-checks the session.
@@ -38,5 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   const farmer = await prisma.farmer.create({ data: parsed.data });
+  // Admin feed only: a farm nobody has logged into yet has no portal to update.
+  notifyAdminChange("farmer");
   return NextResponse.json({ farmer }, { status: 201 });
 }

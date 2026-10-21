@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 import { startOfUtcDay } from "@/lib/reports/dates";
 import { RULES } from "./rules";
 import { SEVERITY_RANK, type AlertCandidate, type RuleContext } from "./types";
@@ -55,10 +56,13 @@ export async function evaluateAlerts(farmerId: string, opts: { flockId?: string 
 
     for (const rule of RULES) {
       for (const dateKey of rule.resolves?.(ctx) ?? []) {
-        await prisma.alert.updateMany({
+        const cleared = await prisma.alert.updateMany({
           where: { farmerId, flockId: flock.id, dedupeKey: dedupeKey(farmerId, flock.id, { code: rule.code, dateKey }), status: { not: "RESOLVED" } },
           data: { status: "RESOLVED", resolvedAt: new Date() },
         });
+        // An alert clearing itself changes the badge and the dashboard's health card, so it
+        // is as worth announcing as one firing.
+        if (cleared.count > 0) notifyFarmerChange(farmerId, "alert");
       }
       for (const c of rule.evaluate(ctx)) created += await store(farmerId, flock.id, c);
     }
@@ -77,12 +81,14 @@ async function store(farmerId: string, flockId: string, c: AlertCandidate): Prom
     if (existing.status !== "RESOLVED" && SEVERITY_RANK[c.severity] > SEVERITY_RANK[existing.severity]) {
       // Same event, now worse: raise it and mark it unread again. Never lowers, never reopens a resolved one.
       await prisma.alert.updateMany({ where: { id: existing.id, farmerId }, data: { severity: c.severity, readAt: null, ...text } });
+      notifyFarmerChange(farmerId, "alert");
     }
     return 0;
   }
 
   try {
     await prisma.alert.create({ data: { farmerId, flockId, code: c.code, severity: c.severity, dedupeKey: key, ...text } });
+    notifyFarmerChange(farmerId, "alert");
     return 1;
   } catch (err) {
     // Lost a race with a simultaneous evaluation: the alert exists, which is the goal.

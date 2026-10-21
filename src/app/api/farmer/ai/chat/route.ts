@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireFarmerApi } from "@/lib/auth/dal";
 import { jsonError } from "@/lib/auth/http";
 import { isLimited, recordAttempt, retryAfterSeconds } from "@/lib/auth/rateLimit";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 import { inAppDelivery, respondToFarmerMessage } from "@/lib/whatsapp/handleInboundWebhook";
 
 // The farmer's in-app "Chat with AI Assistant". It runs the SAME pipeline as a
@@ -83,6 +84,10 @@ export async function POST(req: NextRequest) {
       mediaUrl: image ? imageDataUrl : null,
     },
   });
+
+  // Before the AI runs, as on WhatsApp: the admin's Messages page shouldn't wait for Gemini
+  // to see that the farmer wrote in.
+  notifyFarmerChange(farmerId, "message");
 
   try {
     await respondToFarmerMessage({

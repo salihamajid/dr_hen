@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { FarmerShell } from "@/components/farmer/FarmerShell";
+import { LiveUpdates } from "@/components/realtime/LiveUpdates";
 import { requireFarmer } from "@/lib/auth/dal";
 import { sweepAlertsIfDue } from "@/lib/alerts/engine";
 import { prisma } from "@/lib/prisma";
+import { FARMER_STREAM } from "@/lib/realtime/events";
 
 export default async function FarmerPortalLayout({ children }: { children: React.ReactNode }) {
   // Behind src/proxy.ts and DB-verified: a revoked or deleted farmer is bounced here.
@@ -20,6 +22,8 @@ export default async function FarmerPortalLayout({ children }: { children: React
 
   return (
     <FarmerShell farmerName={farmer?.name ?? "Farmer"} unreadAlerts={unreadAlerts}>
+      {/* This farm's own stream only — the topic comes from the session inside the handler. */}
+      <LiveUpdates stream={FARMER_STREAM} />
       {children}
     </FarmerShell>
   );

@@ -7,6 +7,7 @@ import { farmerSignupSchema } from "@/lib/validators/auth";
 import { jsonError, parseJsonBody } from "@/lib/auth/http";
 import { clientIp, isLimited, recordAttempt, retryAfterSeconds } from "@/lib/auth/rateLimit";
 import { FARMER_HOME } from "@/lib/auth/paths";
+import { notifyAdminChange } from "@/lib/realtime/bus";
 
 // Public and creates rows, so every attempt counts (not just failures): otherwise
 // a script could fill the Farmer table with junk at the speed of the network.
@@ -58,6 +59,10 @@ export async function POST(req: NextRequest) {
       }
       throw err;
     }
+
+    // A farm that just registered itself should appear on an open admin dashboard without
+    // anyone reloading. Only the admin feed: this farmer has no portal open yet.
+    notifyAdminChange("farmer");
 
     const token = await createSessionToken({
       sub: farmer.user!.id,

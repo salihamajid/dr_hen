@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/auth/dal";
+import { notifyFarmerChange } from "@/lib/realtime/bus";
 
 const treatmentInputSchema = z.object({
   farmerId: z.string().min(1),
@@ -38,5 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const treatment = await prisma.treatment.create({ data: parsed.data });
+  // Both feeds: the admin's treatment figures and the farm's own screens show this.
+  notifyFarmerChange(treatment.farmerId, "treatment");
   return NextResponse.json({ treatment }, { status: 201 });
 }
