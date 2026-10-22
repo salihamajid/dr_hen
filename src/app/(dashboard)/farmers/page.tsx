@@ -13,30 +13,54 @@ const PAGE_SIZE = 10;
 export default async function FarmersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   // Re-checked here, not only in the layout: layouts don't re-run on client navigation.
   await requireAdmin();
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, q } = await searchParams;
   const page = Math.max(1, Number(pageParam ?? "1"));
+  const query = (q ?? "").trim();
+
+  // Name, place or number — the three things an admin actually has to hand when someone rings.
+  const where = query
+    ? {
+        OR: [
+          { name: { contains: query, mode: "insensitive" as const } },
+          { location: { contains: query, mode: "insensitive" as const } },
+          { whatsappNumber: { contains: query } },
+        ],
+      }
+    : {};
 
   const [farmers, total] = await Promise.all([
     prisma.farmer.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: { treatments: { orderBy: { createdAt: "desc" }, take: 1 } },
     }),
-    prisma.farmer.count(),
+    prisma.farmer.count({ where }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageHref = (p: number) => (query ? `/farmers?q=${encodeURIComponent(query)}&page=${p}` : `/farmers?page=${p}`);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Farmers</h1>
-        <Link href="/farmers/new" className="rounded-lg bg-brand-red px-4 py-2 text-sm font-semibold text-white">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold">Farmers</h1>
+          {query && (
+            <p className="truncate text-sm text-black/55">
+              {total} match{total === 1 ? "" : "es"} for “{query}” ·{" "}
+              <Link href="/farmers" className="font-semibold text-brand-green hover:underline">
+                Clear
+              </Link>
+            </p>
+          )}
+        </div>
+        <Link href="/farmers/new" className="shrink-0 rounded-lg bg-brand-red px-4 py-2 text-sm font-semibold text-white">
           + Add Farmer
         </Link>
       </div>
@@ -56,6 +80,13 @@ export default async function FarmersPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5">
+            {farmers.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-10 text-center text-sm text-black/45">
+                  {query ? `No farmer matches “${query}”.` : "No farmers yet."}
+                </td>
+              </tr>
+            )}
             {farmers.map((f) => (
               <tr key={f.id}>
                 <td className="py-3 pr-4 font-medium">{f.name}</td>
@@ -85,7 +116,7 @@ export default async function FarmersPage({
               .map((p) => (
                 <Link
                   key={p}
-                  href={`/farmers?page=${p}`}
+                  href={pageHref(p)}
                   className={`flex h-7 w-7 items-center justify-center rounded-lg ${
                     p === page ? "bg-brand-red text-white" : "hover:bg-black/5"
                   }`}

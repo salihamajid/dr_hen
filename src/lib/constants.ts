@@ -1,11 +1,14 @@
+// Admin menu. "badge" marks a newly added area; it is written here rather than in the
+// sidebar so the menu stays one list with no special cases in the markup.
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/farmers", label: "Farmers", icon: "Users" },
   { href: "/flocks", label: "Flocks", icon: "Bird" },
-  { href: "/treatments", label: "Treatments", icon: "Syringe" },
   { href: "/vaccination", label: "Vaccination", icon: "ShieldPlus" },
+  { href: "/treatments", label: "Treatments", icon: "Syringe" },
+  { href: "/broadcast", label: "AI Broadcast", icon: "MessageCircleHeart", badge: "NEW" },
   { href: "/messages", label: "Messages", icon: "MessageSquare" },
-  { href: "/reports", label: "Reports", icon: "FileBarChart" },
+  { href: "/reports", label: "Analytics", icon: "FileBarChart" },
   { href: "/disease-guide", label: "Disease Guide", icon: "BookOpenText" },
   { href: "/settings", label: "Settings", icon: "Settings" },
 ] as const;
