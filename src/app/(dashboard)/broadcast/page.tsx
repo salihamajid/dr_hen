@@ -1,7 +1,9 @@
 import { FileVideo, MessageSquare, Video } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/dal";
+import { BroadcastComposer } from "@/components/admin/BroadcastComposer";
 import { loadAdminChrome, timeAgo, type RecentBroadcastRow } from "@/lib/admin/dashboardData";
+import { isSessionWindowOpen } from "@/lib/whatsapp/sessionWindow";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,7 @@ const STATUS_WORD: Record<RecentBroadcastRow["status"], string> = {
  */
 export default async function BroadcastPage() {
   await requireAdmin();
-  const [broadcasts, farmerCount, { agent }] = await Promise.all([
+  const [broadcasts, farmers, { agent }] = await Promise.all([
     prisma.broadcast.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -47,11 +49,16 @@ export default async function BroadcastPage() {
         createdBy: { select: { email: true } },
       },
     }),
-    prisma.farmer.count(),
+    prisma.farmer.findMany({ select: { id: true } }),
     loadAdminChrome(),
   ]);
 
   const now = new Date();
+  const farmerCount = farmers.length;
+  // How many farmers Meta will accept a plain message for right now. Counted here so the
+  // composer can say it before the admin writes anything, not after a failed send.
+  const openWindows = await Promise.all(farmers.map((f) => isSessionWindowOpen(f.id)));
+  const openWindowCount = openWindows.filter(Boolean).length;
 
   return (
     <div className="flex max-w-4xl flex-col gap-4">
@@ -75,11 +82,12 @@ export default async function BroadcastPage() {
           </p>
         </div>
         <p className="mt-2 rounded-xl bg-black/[0.03] px-3 py-2 text-xs leading-relaxed text-black/55">
-          Sending is built in the next phase. Meta only allows a business-initiated message outside a
-          farmer&apos;s 24-hour reply window through an approved template, so the composer has to choose
-          between a free-form message and a template per farmer — which is exactly what this page will do.
+          {openWindowCount} of {farmerCount} farmers have messaged in the last 24 hours, so Meta will accept a
+          plain message for those. The rest can only be reached through an approved template.
         </p>
       </section>
+
+      <BroadcastComposer farmerCount={farmerCount} openWindowCount={openWindowCount} canSend={agent.connected} />
 
       <section className="rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm">
         <h2 className="pb-3 text-[15px] font-extrabold">Broadcast history</h2>

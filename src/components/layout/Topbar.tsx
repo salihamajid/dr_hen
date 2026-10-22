@@ -61,7 +61,9 @@ export function Topbar({
       </form>
 
       <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-3">
-        <Link href="/dashboard#attention" className="relative rounded-full p-2 hover:bg-white/10" aria-label={`${pendingCount} items need attention`}>
+        {/* The count is open critical alerts plus waiting vet and feed requests, so the bell
+            leads to the page where those are actually dealt with. */}
+        <Link href="/requests" className="relative rounded-full p-2 hover:bg-white/10" aria-label={`${pendingCount} items need attention`}>
           <Bell className="h-5 w-5" />
           {pendingCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#ff3b30] px-1 text-[10px] font-bold ring-2 ring-[#0a6f37]">

@@ -124,7 +124,8 @@ function FlockHealthSlide({ data }: { data: FlockHealth }) {
         ]}
       />
       <p className="pt-1.5 text-[10px] leading-snug text-black/35">
-        {data.total} active flock{data.total === 1 ? "" : "s"}. Sick = an open critical alert, or a farm under treatment or escalated.
+        {data.total} active flock{data.total === 1 ? "" : "s"}. Sick = an open critical alert, or a farm under treatment or escalated. Information-only
+        alerts, such as a missed entry, do not count against health.
       </p>
     </>
   );

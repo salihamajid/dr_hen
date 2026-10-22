@@ -7,6 +7,7 @@ export const NAV_ITEMS = [
   { href: "/vaccination", label: "Vaccination", icon: "ShieldPlus" },
   { href: "/treatments", label: "Treatments", icon: "Syringe" },
   { href: "/broadcast", label: "AI Broadcast", icon: "MessageCircleHeart", badge: "NEW" },
+  { href: "/requests", label: "Requests", icon: "Inbox" },
   { href: "/messages", label: "Messages", icon: "MessageSquare" },
   { href: "/reports", label: "Analytics", icon: "FileBarChart" },
   { href: "/disease-guide", label: "Disease Guide", icon: "BookOpenText" },

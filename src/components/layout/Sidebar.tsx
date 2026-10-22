@@ -6,6 +6,7 @@ import {
   Bird,
   BookOpenText,
   FileBarChart,
+  Inbox,
   LayoutDashboard,
   MessageCircleHeart,
   MessageSquare,
@@ -27,6 +28,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   MessageCircleHeart,
   FileBarChart,
   BookOpenText,
+  Inbox,
   Settings,
 };
 

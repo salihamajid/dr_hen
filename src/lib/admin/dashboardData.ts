@@ -263,8 +263,10 @@ export async function loadAdminDashboard(): Promise<AdminDashboardData> {
     // A farm under treatment or escalated is a sick farm; a treatment row carries no flockId
     // (diagnoses arrive by WhatsApp, where no shed is named), so the farm status is the only
     // place that signal lives.
+    // An INFO alert is paperwork (a day with no entry), not illness, so it leaves a flock
+    // healthy. Only a real warning or a farm the system has flagged moves it.
     if (alert === "CRITICAL" || farmStatus === "ESCALATED" || farmStatus === "UNDER_TREATMENT") sick++;
-    else if (alert || farmStatus === "AT_RISK") atRisk++;
+    else if (alert === "ALERT" || farmStatus === "AT_RISK") atRisk++;
   }
   const flockHealth: FlockHealth = {
     total: activeFlocks.length,

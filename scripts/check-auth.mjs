@@ -53,6 +53,26 @@ for (const f of pages) {
   }
 }
 
+// --- a write schema must never let the client set who owns a row or how far along it is.
+// AGENTS.md rule 5. Caught statically because the cost of missing it once is a farmer
+// filing a request against another farm, or marking their own feed order delivered.
+const FORBIDDEN_FIELDS = /^\s*(farmerId|userId|role|status|active|tokenVersion|deliveredCount|failedCount)\s*:\s*z\./m;
+// Which validator modules a farmer route can actually post to, followed from its imports —
+// a filename is not evidence: src/lib/validators/farmer.ts is the ADMIN farmer form, and it
+// carries a status field quite correctly.
+const farmerRoutes = routes.filter((f) => f.startsWith("src/app/api/farmer/"));
+const reachable = new Set();
+for (const f of farmerRoutes) {
+  const src = read(join(root, f));
+  if (FORBIDDEN_FIELDS.test(src)) fail(f, "an inline schema accepts an ownership or status field (it must come from the session)");
+  for (const m of src.matchAll(/from\s+"@\/lib\/validators\/([\w-]+)"/g)) reachable.add(`src/lib/validators/${m[1]}.ts`);
+}
+for (const f of reachable) {
+  if (FORBIDDEN_FIELDS.test(read(join(root, f)))) {
+    fail(f, "a schema a farmer can post to accepts an ownership or status field (it must come from the session)");
+  }
+}
+
 // --- farmer code must not look up farmer-owned records by id alone
 const OWNED = "flock|dailyReport|alert|message|treatment|vaccination|vetEscalation";
 const byIdOnly = new RegExp(`prisma\\.(${OWNED})\\.(findUnique|findUniqueOrThrow|update|delete)\\(\\s*\\{\\s*where:\\s*\\{\\s*id\\b`);
