@@ -87,6 +87,14 @@ export interface DiseaseShare {
   count: number;
 }
 
+export interface PendingRequestRow {
+  id: string;
+  farmName: string;
+  farmerId: string;
+  detail: string;
+  ago: string;
+}
+
 export interface AdminDashboardData {
   kpis: Kpis;
   flockHealth: FlockHealth;
@@ -96,6 +104,11 @@ export interface AdminDashboardData {
   agent: AgentStatus;
   treatmentStatus: TreatmentStatusDatum[];
   diseaseShares: DiseaseShare[];
+  /** What farmers have asked for from their own dashboard and nobody has answered yet. */
+  pendingVetRequests: PendingRequestRow[];
+  pendingFeedOrders: PendingRequestRow[];
+  pendingVetCount: number;
+  pendingFeedCount: number;
   /** Bell badge: things genuinely waiting for an admin. */
   pendingForAdmin: number;
 }
@@ -174,6 +187,8 @@ export async function loadAdminDashboard(): Promise<AdminDashboardData> {
     treatmentsByDisease,
     pendingEscalations,
     pendingFeedOrders,
+    recentVetRequests,
+    recentFeedOrders,
   ] = await Promise.all([
     prisma.farmer.count(),
     prisma.farmer.count({ where: { createdAt: { gte: monthStart } } }),
@@ -227,6 +242,20 @@ export async function loadAdminDashboard(): Promise<AdminDashboardData> {
     prisma.treatment.groupBy({ by: ["diseaseCode"], _count: { diseaseCode: true } }),
     prisma.vetEscalation.count({ where: { status: "PENDING" } }),
     prisma.feedOrder.count({ where: { status: "REQUESTED" } }),
+    // The requests themselves, so the dashboard can name the farms waiting rather than
+    // showing a number the admin has to go elsewhere to understand.
+    prisma.vetEscalation.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, createdAt: true, farmerId: true, farmer: { select: { name: true, whatsappNumber: true } } },
+    }),
+    prisma.feedOrder.findMany({
+      where: { status: "REQUESTED" },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, bags: true, createdAt: true, farmerId: true, farmer: { select: { name: true } } },
+    }),
   ]);
 
   // --- alerts by severity
@@ -356,6 +385,22 @@ export async function loadAdminDashboard(): Promise<AdminDashboardData> {
       { status: "OVERDUE", count: statusCount("OVERDUE") },
     ],
     diseaseShares,
+    pendingVetRequests: recentVetRequests.map((v) => ({
+      id: v.id,
+      farmerId: v.farmerId,
+      farmName: v.farmer.name,
+      detail: v.farmer.whatsappNumber,
+      ago: timeAgo(v.createdAt, now),
+    })),
+    pendingFeedOrders: recentFeedOrders.map((f) => ({
+      id: f.id,
+      farmerId: f.farmerId,
+      farmName: f.farmer.name,
+      detail: `${f.bags} bag${f.bags === 1 ? "" : "s"}`,
+      ago: timeAgo(f.createdAt, now),
+    })),
+    pendingVetCount: pendingEscalations,
+    pendingFeedCount: pendingFeedOrders,
     pendingForAdmin: alertsBySeverity.critical + pendingEscalations + pendingFeedOrders,
   };
 }

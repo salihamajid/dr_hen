@@ -3,6 +3,7 @@ import { BroadcastCenterCard } from "@/components/admin/BroadcastCenterCard";
 import { FarmManagementBars } from "@/components/admin/FarmManagementBars";
 import { HealthCarousel } from "@/components/admin/HealthCarousel";
 import { KpiCard } from "@/components/admin/KpiCard";
+import { PendingRequestsCard } from "@/components/admin/PendingRequestsCard";
 import { RecentAlertsCard } from "@/components/admin/RecentAlertsCard";
 import { requireAdmin } from "@/lib/auth/dal";
 import { loadAdminDashboard } from "@/lib/admin/dashboardData";
@@ -84,7 +85,17 @@ export default async function DashboardPage() {
       {/* items-start so the broadcast card keeps its own height instead of being stretched to
           match the taller column beside it. */}
       <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-        <BroadcastCenterCard broadcasts={data.recentBroadcasts} agentConnected={data.agent.connected} />
+        <div className="flex flex-col gap-3">
+          <BroadcastCenterCard broadcasts={data.recentBroadcasts} agentConnected={data.agent.connected} />
+          {/* Sits beside the broadcast card because a farmer waiting on a vet is the most
+              time-sensitive thing on this page. */}
+          <PendingRequestsCard
+            vetRequests={data.pendingVetRequests}
+            feedOrders={data.pendingFeedOrders}
+            vetCount={data.pendingVetCount}
+            feedCount={data.pendingFeedCount}
+          />
+        </div>
 
         <div className="flex flex-col gap-3">
           <HealthCarousel
